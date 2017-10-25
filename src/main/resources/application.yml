@@ -1,0 +1,58 @@
+#任务基础包名
+uw:
+  task:
+    enable-task-registry: true
+    project: com.demo.task
+    #任务管理服务器地址
+    server-host: http://localhost:8080
+    # 主机名
+    host-id: Dev Machine
+    # 私有模式。不运行全局target任务。
+    privacy-mode: false
+    # croner线程数
+    croner-thread-num: 30
+    task-log-min-thread-num: 1
+    task-log-max-thread-num: 100
+    task-rpc-min-thread-num: 1
+    task-rpc-max-thread-num: 100
+
+    # rabbitmq
+    rabbitmq:
+      host: 127.0.0.1
+      port: 5672
+      username: guest
+      password: guest
+      publisher-confirms: true
+      virtual-host: /
+  
+    # redis 缓存
+    redis:
+      database: 0
+      host: 127.0.0.1
+      port: 6379
+      password: password
+      pool:
+        max-active: 20
+        max-wait: 60
+        max-idle: 8
+        min-idle: 1
+      timeout: 0
+
+  #任务管理服务器认证相关配置
+  auth:
+    client:
+      enable-spring-cloud: false
+      auth-server: http://localhost:9999
+      login-entry-point: /api/auth/login
+      refresh-entry-point: /api/auth/token
+      username: username
+      password: password
+      user-type: 1
+      exit-on-auth-failed: false
+      http-pool:
+        max-total: 1000
+        default-max-per-route: 1000
+        connect-timeout: 1000
+        connection-request-timeout: 1000
+        socket-timeout: 1000
+        keep-alive-time-if-not-present: 0
