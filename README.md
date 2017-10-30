@@ -18,7 +18,7 @@ uw-task包是一个分布式任务框架，通过uw-task可以快速构建分布
 <dependency>
 	<groupId>com.umtone</groupId>
 	<artifactId>uw-task</artifactId>
-	<version>2.1.7</version>
+	<version>2.1.8</version>
 </dependency>
 ```
 

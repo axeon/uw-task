@@ -30,6 +30,8 @@ import uw.task.container.TaskRunnerContainer;
 import uw.task.util.*;
 
 import javax.annotation.PreDestroy;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * 自动装配类 Created by Acris on 2017/5/23.
@@ -116,7 +118,14 @@ public class TaskAutoConfiguration {
      */
     @EventListener(ContextRefreshedEvent.class)
     public void handleContextRefresh() {
-        serverConfig.init();
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                serverConfig.init();
+                this.cancel();
+            }
+        }, 5000);
     }
 
     /**
