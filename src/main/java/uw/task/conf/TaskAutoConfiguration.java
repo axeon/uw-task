@@ -30,8 +30,7 @@ import uw.task.container.TaskRunnerContainer;
 import uw.task.util.*;
 
 import javax.annotation.PreDestroy;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 自动装配类 Created by Acris on 2017/5/23.
@@ -60,7 +59,7 @@ public class TaskAutoConfiguration {
     /**
      * 是否已初始化配置，保证只初始化一次；
      */
-    private boolean initFlag = false;
+    private AtomicBoolean initFlag = new AtomicBoolean(false);
 
     /**
      * 声明 taskScheduler bean
@@ -123,8 +122,7 @@ public class TaskAutoConfiguration {
      */
     @EventListener(ContextRefreshedEvent.class)
     public void handleContextRefresh() {
-        if (!initFlag) {
-            initFlag = true;
+        if (initFlag.compareAndSet(false, true)) {
             serverConfig.init();
         }
     }
