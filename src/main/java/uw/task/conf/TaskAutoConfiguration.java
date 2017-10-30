@@ -125,7 +125,7 @@ public class TaskAutoConfiguration {
                 serverConfig.init();
                 this.cancel();
             }
-        }, 5000);
+        }, 2000);
     }
 
     /**
