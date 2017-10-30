@@ -15,7 +15,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.ContextStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
@@ -97,7 +97,7 @@ public class TaskAutoConfiguration {
         serverConfig = new TaskServerConfig(context, taskProperties, taskRabbitConnectionFactory,
                 taskRunnerContainer, taskCronerContainer, taskAPI, rabbitAdmin);
         // 返回TaskScheduler
-        TaskScheduler taskScheduler =  new TaskScheduler(taskProperties, rabbitTemplate, taskRunnerContainer, globalSequenceManager);
+        TaskScheduler taskScheduler = new TaskScheduler(taskProperties, rabbitTemplate, taskRunnerContainer, globalSequenceManager);
         // taskRunnerContainer错误重试需要TaskScheduler
         taskRunnerContainer.setTaskScheduler(taskScheduler);
         return taskScheduler;
@@ -116,7 +116,7 @@ public class TaskAutoConfiguration {
     /**
      * ApplicationContext初始化完成或刷新后执行init方法
      */
-    @EventListener(ContextRefreshedEvent.class)
+    @EventListener(ContextStartedEvent.class)
     public void handleContextRefresh() {
         Timer timer = new Timer();
         timer.schedule(new TimerTask() {
@@ -125,7 +125,7 @@ public class TaskAutoConfiguration {
                 serverConfig.init();
                 this.cancel();
             }
-        }, 2000);
+        }, 5000);
     }
 
     /**
