@@ -15,7 +15,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.event.ContextStartedEvent;
+import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
@@ -56,6 +56,11 @@ public class TaskAutoConfiguration {
      * Leader选举器
      */
     private LeaderVote leaderVote;
+
+    /**
+     * 是否已初始化配置，保证只初始化一次；
+     */
+    private static boolean initFlag = false;
 
     /**
      * 声明 taskScheduler bean
@@ -116,16 +121,12 @@ public class TaskAutoConfiguration {
     /**
      * ApplicationContext初始化完成或刷新后执行init方法
      */
-    @EventListener(ContextStartedEvent.class)
+    @EventListener(ContextRefreshedEvent.class)
     public void handleContextRefresh() {
-        Timer timer = new Timer();
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                serverConfig.init();
-                this.cancel();
-            }
-        }, 5000);
+        if (!initFlag) {
+            serverConfig.init();
+            initFlag = true;
+        }
     }
 
     /**
