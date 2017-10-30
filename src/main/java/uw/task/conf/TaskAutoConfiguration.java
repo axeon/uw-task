@@ -60,7 +60,7 @@ public class TaskAutoConfiguration {
     /**
      * 是否已初始化配置，保证只初始化一次；
      */
-    private static boolean initFlag = false;
+    private boolean initFlag = false;
 
     /**
      * 声明 taskScheduler bean
@@ -124,8 +124,8 @@ public class TaskAutoConfiguration {
     @EventListener(ContextRefreshedEvent.class)
     public void handleContextRefresh() {
         if (!initFlag) {
-            serverConfig.init();
             initFlag = true;
+            serverConfig.init();
         }
     }
 
