@@ -42,7 +42,7 @@ public class LocalRateLimiter {
 	 */
 	public boolean initLimiter(String name, long limitRate, long limitTimeSecond) {
 		RateLimiter limiter = map.get(name);
-		double rate = Math.ceil((double) limitRate / (double) limitTimeSecond);
+		double rate = (double) limitRate / (double) limitTimeSecond;
 		if (rate == 0.0d) {
 			rate = 1.0d;
 		}
