@@ -1,6 +1,7 @@
 package uw.task.entity;
 
 import java.io.Serializable;
+import java.util.Date;
 
 /**
  * taskRunnerConfig实体类。
@@ -168,7 +169,17 @@ public class TaskRunnerConfig implements Serializable {
 	 * 运行超时
 	 */
 	private int runTimeout;
+	
+	/**
+	 * 创建日期。
+	 */
+	private Date createDate;
 
+	/**
+	 * 修改日期。
+	 */
+	private Date modifyDate;
+	
 	/**
 	 * 状态值
 	 */
@@ -177,229 +188,116 @@ public class TaskRunnerConfig implements Serializable {
 	public TaskRunnerConfig() {
 	}
 
-	/**
-	 * @return the id
-	 */
 	public long getId() {
 		return id;
 	}
 
-	/**
-	 * @param id
-	 *            the id to set
-	 */
 	public void setId(long id) {
 		this.id = id;
 	}
 
-	/**
-	 * @return the taskName
-	 */
 	public String getTaskName() {
 		return taskName;
 	}
 
-	/**
-	 * @param taskName
-	 *            the taskName to set
-	 */
 	public void setTaskName(String taskName) {
 		this.taskName = taskName;
 	}
 
-	/**
-	 * @return the taskDesc
-	 */
 	public String getTaskDesc() {
 		return taskDesc;
 	}
 
-	/**
-	 * @param taskDesc
-	 *            the taskDesc to set
-	 */
 	public void setTaskDesc(String taskDesc) {
 		this.taskDesc = taskDesc;
 	}
 
-	/**
-	 * @return the taskClass
-	 */
 	public String getTaskClass() {
 		return taskClass;
 	}
 
-	/**
-	 * @param taskClass
-	 *            the taskClass to set
-	 */
 	public void setTaskClass(String taskClass) {
 		this.taskClass = taskClass;
 	}
 
-	/**
-	 * @return the taskTag
-	 */
 	public String getTaskTag() {
 		return taskTag;
 	}
 
-	/**
-	 * @param taskTag
-	 *            the taskTag to set
-	 */
 	public void setTaskTag(String taskTag) {
 		this.taskTag = taskTag;
 	}
 
-	/**
-	 * @return the consumerNum
-	 */
 	public int getConsumerNum() {
 		return consumerNum;
 	}
 
-	/**
-	 * @param consumerNum
-	 *            the consumerNum to set
-	 */
 	public void setConsumerNum(int consumerNum) {
 		this.consumerNum = consumerNum;
 	}
 
-	/**
-	 * @return the prefetchNum
-	 */
 	public int getPrefetchNum() {
 		return prefetchNum;
 	}
 
-	/**
-	 * @param prefetchNum
-	 *            the prefetchNum to set
-	 */
 	public void setPrefetchNum(int prefetchNum) {
 		this.prefetchNum = prefetchNum;
 	}
 
-	/**
-	 * @return the rateLimitType
-	 */
 	public int getRateLimitType() {
 		return rateLimitType;
 	}
 
-	/**
-	 * @param rateLimitType
-	 *            the rateLimitType to set
-	 */
 	public void setRateLimitType(int rateLimitType) {
 		this.rateLimitType = rateLimitType;
 	}
 
-	/**
-	 * @return the rateLimitValue
-	 */
 	public int getRateLimitValue() {
 		return rateLimitValue;
 	}
 
-	/**
-	 * @param rateLimitValue
-	 *            the rateLimitValue to set
-	 */
 	public void setRateLimitValue(int rateLimitValue) {
 		this.rateLimitValue = rateLimitValue;
 	}
 
-	/**
-	 * @return the rateLimitTime
-	 */
 	public int getRateLimitTime() {
 		return rateLimitTime;
 	}
 
-	/**
-	 * @param rateLimitTime
-	 *            the rateLimitTime to set
-	 */
 	public void setRateLimitTime(int rateLimitTime) {
 		this.rateLimitTime = rateLimitTime;
 	}
 
-	/**
-	 * @return the rateLimitWait
-	 */
 	public int getRateLimitWait() {
 		return rateLimitWait;
 	}
 
-	/**
-	 * @param rateLimitWait
-	 *            the rateLimitWait to set
-	 */
 	public void setRateLimitWait(int rateLimitWait) {
 		this.rateLimitWait = rateLimitWait;
 	}
 
-	/**
-	 * @return the retryTimesByOverrated
-	 */
 	public int getRetryTimesByOverrated() {
 		return retryTimesByOverrated;
 	}
 
-	/**
-	 * @param retryTimesByOverrated
-	 *            the retryTimesByOverrated to set
-	 */
 	public void setRetryTimesByOverrated(int retryTimesByOverrated) {
 		this.retryTimesByOverrated = retryTimesByOverrated;
 	}
 
-	/**
-	 * @return the retryTimesByPartner
-	 */
 	public int getRetryTimesByPartner() {
 		return retryTimesByPartner;
 	}
 
-	/**
-	 * @param retryTimesByPartner
-	 *            the retryTimesByPartner to set
-	 */
 	public void setRetryTimesByPartner(int retryTimesByPartner) {
 		this.retryTimesByPartner = retryTimesByPartner;
 	}
 
-	/**
-	 * @return the targetHost
-	 */
 	public String getRunTarget() {
 		return runTarget;
 	}
 
-	/**
-	 * @param targetHost
-	 *            the targetHost to set
-	 */
-	public void setRunTarget(String targetHost) {
-		this.runTarget = targetHost;
-	}
-
-	/**
-	 * @return the status
-	 */
-	public int getState() {
-		return state;
-	}
-
-	/**
-	 * @param status
-	 *            the status to set
-	 */
-	public void setState(int status) {
-		this.state = status;
+	public void setRunTarget(String runTarget) {
+		this.runTarget = runTarget;
 	}
 
 	public int getFailRate() {
@@ -466,4 +364,29 @@ public class TaskRunnerConfig implements Serializable {
 		this.runTimeout = runTimeout;
 	}
 
+	public Date getCreateDate() {
+		return createDate;
+	}
+
+	public void setCreateDate(Date createDate) {
+		this.createDate = createDate;
+	}
+
+	public Date getModifyDate() {
+		return modifyDate;
+	}
+
+	public void setModifyDate(Date modifyDate) {
+		this.modifyDate = modifyDate;
+	}
+
+	public int getState() {
+		return state;
+	}
+
+	public void setState(int state) {
+		this.state = state;
+	}
+	
+	
 }

@@ -12,18 +12,18 @@ import uw.task.entity.TaskCronerConfig;
 import uw.task.entity.TaskRunnerConfig;
 
 public class TaskMetaInfoManager {
-	
+
 	/**
 	 * 运行主机配置
 	 */
 	static List<String> targetConfig = null;
-	
+
 	/**
 	 * Runner任务实例缓存。
 	 */
 	@SuppressWarnings("rawtypes")
 	static Map<String, TaskRunner> runnerMap = new HashMap<>();
-	
+
 	/**
 	 * Cron任务实例缓存。
 	 */
@@ -40,12 +40,6 @@ public class TaskMetaInfoManager {
 	static ConcurrentHashMap<String, TaskCronerConfig> cronerConfigMap = new ConcurrentHashMap<>();
 
 	/**
-	 * 系统队列表。
-	 */
-	static ConcurrentHashMap<String, String> sysQueueSet = new ConcurrentHashMap<>();
-
-
-	/**
 	 * 获得任务运行实例。
 	 *
 	 * @param taskClass
@@ -54,8 +48,7 @@ public class TaskMetaInfoManager {
 	public static TaskRunner<?, ?> getRunner(String taskClass) {
 		return runnerMap.get(taskClass);
 	}
-	
-	
+
 	/**
 	 * 检查一个runner是否可以在本地运行。
 	 * 
@@ -72,7 +65,6 @@ public class TaskMetaInfoManager {
 		}
 		return exists && matchTarget;
 	}
-	
 
 	/**
 	 * 根据服务器端Queue列表，返回合适的key。
@@ -90,35 +82,33 @@ public class TaskMetaInfoManager {
 			sb.append(data.getRunTarget());
 		}
 		String all = sb.toString();
-		if (sysQueueSet.containsKey(all)) {
+		if (runnerConfigMap.containsKey(all)) {
 			return all;
 		}
 		// 检测去除目标的情况
 		if (!all.endsWith("$")) {
 			String test = all.substring(0, all.lastIndexOf('$') + 1);
-			if (sysQueueSet.containsKey(test)) {
+			if (runnerConfigMap.containsKey(test)) {
 				return test;
 			}
 		}
 		// 检测去除TAG的情况
 		if (!all.contains("#$")) {
 			String test = all.substring(0, all.indexOf('#') + 1) + all.substring(all.lastIndexOf('$'), all.length());
-			if (sysQueueSet.containsKey(test)) {
+			if (runnerConfigMap.containsKey(test)) {
 				return test;
 			}
 		}
 		// 两个都去除的情况
 		if (!all.endsWith("#$")) {
 			String test = data.getTaskClass() + "#$";
-			if (sysQueueSet.containsKey(test)) {
+			if (runnerConfigMap.containsKey(test)) {
 				return test;
 			}
 		}
 		// 最后都没匹配到，返回原始数据
 		return all;
 	}
-
-
 
 	/**
 	 * 获得任务配置
@@ -169,7 +159,7 @@ public class TaskMetaInfoManager {
 		// 匹配不上了。。。
 		return null;
 	}
-	
+
 	/**
 	 * 更新系统队列表。
 	 * 
@@ -177,13 +167,16 @@ public class TaskMetaInfoManager {
 	 */
 	static void updateSysQueue(final TaskRunnerConfig config) {
 		String key = getRunnerConfigKey(config);
-		if (config.getState() < 1) {
-			sysQueueSet.remove(key);
-		} else {
-			sysQueueSet.put(key, "");
+		// 检测是否老的TaskRunnerConfig是否是本地的完整配置，如果是，则不管。
+		TaskRunnerConfig old = runnerConfigMap.get(key);
+		if (old.getCreateDate() == null) {
+			if (config.getState() < 1) {
+				runnerConfigMap.remove(key);
+			} else {
+				runnerConfigMap.put(key, config);
+			}
 		}
 	}
-	
 
 	/**
 	 * 获得croner配置键。 使用taskClass#Id$target来配置
@@ -220,6 +213,5 @@ public class TaskMetaInfoManager {
 		}
 		return sb.toString();
 	}
-
 
 }
