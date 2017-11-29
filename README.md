@@ -249,46 +249,41 @@ private TaskScheduler taskScheduler;
  */
 public void sendToQueue(TaskData<?, ?> taskdata);
 ```
-3. 使用RPC调用返回Future。
-
-RPC调用使用Future.get()获得返回结果，返回结果为TaskData<TP,TD>
-
-```
-/**
- * 远程运行任务，并返回future<TaskData<?,?>>。 如果需要获得数据，可以使用futrue.get()来获得。
- * 
- * @param target
- *            目标主机配置名，如果没有，则为空
- * @param taskdata
- *            任务数据
-  * @param typeRef
- *            一个传递泛型类型的技巧，用于定义泛型类型的
- * @return
- */
-public <TP, TD> Future<TaskData<TP, TD>> runTask(TaskData<TP, TD> taskdata,TypeReference<TaskData<TP, RD>> typeRef);
-
-
+3. 同步执行任务
+运行期，程序根据runType判断，并结合任务代码是否在本地的判定，决定是运行在本地还是远程。
+一般来说，程序的默认runType=RUN_TYPE_AUTO_RPC，此时是自动判定默认。
+也可以指定RUN_TYPE_GLOBAL_RPC和RUN_TYPE_LOCAL。
 
 ```
+	/**
+	 * 同步执行任务，可能会导致阻塞。
+	 *
+	 * @param runTarget
+	 *            目标主机配置名，如果没有，则为空
+	 * @param taskData
+	 *            任务数据
+	 * @return
+	 */
+	public <TP, RD> TaskData<TP, RD> runTask(final TaskData<TP, RD> taskData,final TypeReference<TaskData<TP, RD>> typeRef);
+```
 
-4. 直接在本地运行任务
-
+4. 异步执行任务
 
 ```
-/**
- * 异步方式本地直接运行任务。
- * 
- * @param taskdata
- */
-public Future<TaskData<?, ?>> runTaskLocal(TaskData<?, ?> taskdata);
-
-/**
- * 同步方式本地直接运行任务。 在此执行任务，可能会导致阻塞。
- * 
- * @param taskData
- */
-public <TP, RD> TaskData<TP, RD> runTaskLocalSync(TaskData<TP, RD> taskData);
+	/**
+	 * 远程运行任务，并返回future<TaskData<?,?>>。 如果需要获得数据，可以使用futrue.get()来获得。
+	 * 此方法要谨慎使用，因为task存在限速，大并发下可能会导致线程数超。
+	 * @param runTarget
+	 *            目标主机配置名，如果没有，则为空
+	 * @param taskData
+	 *            任务数据
+	 * @return
+	 */
+	public <TP, RD> Future<TaskData<TP, RD>> runTaskAsync(final TaskData<TP, RD> taskData,
+			final TypeReference<TaskData<TP, RD>> typeRef);
 ```
+
+
 
 
 # TaskData说明
