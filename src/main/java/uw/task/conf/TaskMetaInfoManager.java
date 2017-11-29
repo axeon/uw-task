@@ -169,7 +169,7 @@ public class TaskMetaInfoManager {
 		String key = getRunnerConfigKey(config);
 		// 检测是否老的TaskRunnerConfig是否是本地的完整配置，如果是，则不管。
 		TaskRunnerConfig old = runnerConfigMap.get(key);
-		if (old.getCreateDate() == null) {
+		if (old == null || (old != null && old.getCreateDate() == null)) {
 			if (config.getState() < 1) {
 				runnerConfigMap.remove(key);
 			} else {

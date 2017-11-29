@@ -85,8 +85,9 @@ public class TaskScheduler {
 		rabbitTemplate.convertAndSend(queue, queue, taskData);
 	}
 
+
 	/**
-	 * 远程运行任务，并返回future<TaskData<?,?>>。 如果需要获得数据，可以使用futrue.get()来获得。
+	 * 同步执行任务，可能会导致阻塞。
 	 *
 	 * @param runTarget
 	 *            目标主机配置名，如果没有，则为空
@@ -94,10 +95,63 @@ public class TaskScheduler {
 	 *            任务数据
 	 * @return
 	 */
-	public <TP, RD> Future<TaskData<TP, RD>> runTask(final TaskData<TP, RD> taskData,
+	public <TP, RD> TaskData<TP, RD> runTask(final TaskData<TP, RD> taskData,
 			final TypeReference<TaskData<TP, RD>> typeRef) {
 		taskData.setId(globalSequenceManager.nextId("task_runner_log"));
 		taskData.setQueueDate(new Date());
+
+		// 当自动RPC，并且本地有runner，而且target匹配的时候，运行在本地模式下。
+		if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && TaskMetaInfoManager.checkRunnerRunLocal(taskData)) {
+			// 启动本地运行模式。
+			taskData.setRunType(TaskData.RUN_TYPE_LOCAL);
+		} else {
+			taskData.setRunType(TaskData.RUN_TYPE_GLOBAL_RPC);
+		}
+
+		if (taskData.getRunType() == TaskData.RUN_TYPE_LOCAL) {
+			taskRunnerContainer.process(taskData);
+			return taskData;
+		} else {
+			// 全局运行模式
+			String queue = TaskMetaInfoManager.getFitQueue(taskData);
+			@SuppressWarnings("unchecked")
+			TaskData<TP, RD> retdata = (TaskData<TP, RD>) rabbitTemplate.convertSendAndReceive(queue, queue, taskData,
+					new MessagePostProcessor() {
+
+						@Override
+						public Message postProcessMessage(Message message) throws AmqpException {
+							MessageProperties mp = message.getMessageProperties();
+							mp.setPriority(10);
+							mp.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
+							mp.setExpiration("180000");
+							return message;
+						}
+					});
+			if (typeRef != null) {
+				try {
+					retdata = TaskMessageConverter.getTaskObjectMapper().convertValue(retdata, typeRef);
+				} catch (Exception e) {
+					log.error(e.getMessage(), e);
+				}
+			}
+			return retdata;
+		}
+	}
+	
+	/**
+	 * 远程运行任务，并返回future<TaskData<?,?>>。 如果需要获得数据，可以使用futrue.get()来获得。
+	 * 此方法要谨慎使用，因为task存在限速，大并发下可能会导致线程数超。
+	 * @param runTarget
+	 *            目标主机配置名，如果没有，则为空
+	 * @param taskData
+	 *            任务数据
+	 * @return
+	 */
+	public <TP, RD> Future<TaskData<TP, RD>> runTaskAsync(final TaskData<TP, RD> taskData,
+			final TypeReference<TaskData<TP, RD>> typeRef) {
+		taskData.setId(globalSequenceManager.nextId("task_runner_log"));
+		taskData.setQueueDate(new Date());
+		
 		// 当自动RPC，并且本地有runner，而且target匹配的时候，运行在本地模式下。
 		if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && TaskMetaInfoManager.checkRunnerRunLocal(taskData)) {
 			// 启动本地运行模式。
@@ -142,57 +196,5 @@ public class TaskScheduler {
 		}
 	}
 
-	/**
-	 * 远程运行任务，并返回future<TaskData<?,?>>。 如果需要获得数据，可以使用futrue.get()来获得。
-	 *
-	 * @param runTarget
-	 *            目标主机配置名，如果没有，则为空
-	 * @param taskData
-	 *            任务数据
-	 * @return
-	 */
-	public <TP, RD> TaskData<TP, RD> runTaskSync(final TaskData<TP, RD> taskData,
-			final TypeReference<TaskData<TP, RD>> typeRef) {
-		taskData.setId(globalSequenceManager.nextId("task_runner_log"));
-		taskData.setQueueDate(new Date());
-		taskRunnerContainer.process(taskData);
-
-		// 当自动RPC，并且本地有runner，而且target匹配的时候，运行在本地模式下。
-		if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && TaskMetaInfoManager.checkRunnerRunLocal(taskData)) {
-			// 启动本地运行模式。
-			taskData.setRunType(TaskData.RUN_TYPE_LOCAL);
-		} else {
-			taskData.setRunType(TaskData.RUN_TYPE_GLOBAL_RPC);
-		}
-
-		if (taskData.getRunType() == TaskData.RUN_TYPE_LOCAL) {
-			taskRunnerContainer.process(taskData);
-			return taskData;
-		} else {
-			// 全局运行模式
-			String queue = TaskMetaInfoManager.getFitQueue(taskData);
-			@SuppressWarnings("unchecked")
-			TaskData<TP, RD> retdata = (TaskData<TP, RD>) rabbitTemplate.convertSendAndReceive(queue, queue, taskData,
-					new MessagePostProcessor() {
-
-						@Override
-						public Message postProcessMessage(Message message) throws AmqpException {
-							MessageProperties mp = message.getMessageProperties();
-							mp.setPriority(10);
-							mp.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
-							mp.setExpiration("180000");
-							return message;
-						}
-					});
-			if (typeRef != null) {
-				try {
-					retdata = TaskMessageConverter.getTaskObjectMapper().convertValue(retdata, typeRef);
-				} catch (Exception e) {
-					log.error(e.getMessage(), e);
-				}
-			}
-			return retdata;
-		}
-	}
 
 }
