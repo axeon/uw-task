@@ -117,14 +117,14 @@ public class TaskRunnerContainer {
 					boolean flag = localRateLimiter.tryAcquire("", taskConfig.getRateLimitWait(), TimeUnit.SECONDS);
 					nolimitFlag = flag ? 0 : -1;
 				} else if (taskConfig.getRateLimitType() == TaskRunnerConfig.RATE_LIMIT_TYPE_TASK_PROCESS) {
-					// 进城内+任务名限制
+					// 进程内+任务名限制
 					localRateLimiter.initLimiter(taskData.getTaskClass(), taskConfig.getRateLimitValue(),
 							taskConfig.getRateLimitTime());
 					boolean flag = localRateLimiter.tryAcquire(taskData.getTaskClass(), taskConfig.getRateLimitWait(),
 							TimeUnit.SECONDS);
 					nolimitFlag = flag ? 0 : -1;
 				} else if (taskConfig.getRateLimitType() == TaskRunnerConfig.RATE_LIMIT_TYPE_TAG_PROCESS) {
-					// 进城内+任务名限制
+					// 进程内+任务名限制
 					String locker = taskData.getTaskClass() + "$" + String.valueOf(taskData.getRateLimitTag());
 					localRateLimiter.initLimiter(locker, taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime());
 					boolean flag = localRateLimiter.tryAcquire(locker, taskConfig.getRateLimitWait(), TimeUnit.SECONDS);
@@ -170,7 +170,21 @@ public class TaskRunnerContainer {
 					}
 				}
 			}
+
 		}
+		// 执行任务延时设定。
+		if (taskData.getTaskDelay() > 0 && taskData.getQueueDate() != null) {
+			long delaySleep = taskData.getTaskDelay()
+					- (System.currentTimeMillis() - taskData.getQueueDate().getTime());
+			if (delaySleep > 0) {
+				try {
+					Thread.sleep(delaySleep);
+				} catch (InterruptedException e) {
+					log.error(e.getMessage(), e);
+				}
+			}
+		}
+
 		// 设置开始执行时间
 		taskData.setRunDate(new Date());
 

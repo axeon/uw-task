@@ -107,6 +107,11 @@ public class TaskData<TP, RD> implements Serializable {
     private String taskTag = "";
     
     /**
+     * 任务延迟毫秒数。一般这个时间不宜太长，大多数情况下不要超过60秒。
+     */
+    private long taskDelay;
+    
+    /**
      * 执行参数，此数值必须有调用方设置。
      */
     private TP taskParam;
@@ -274,6 +279,14 @@ public class TaskData<TP, RD> implements Serializable {
 	 */
 	public String getTaskTag() {
 		return taskTag;
+	}
+
+	public long getTaskDelay() {
+		return taskDelay;
+	}
+
+	public void setTaskDelay(long taskDelay) {
+		this.taskDelay = taskDelay;
 	}
 
 	/**

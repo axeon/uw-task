@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.Binding.DestinationType;
-import org.springframework.amqp.core.DirectExchange;
+import org.springframework.amqp.core.ExchangeBuilder;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
@@ -452,7 +452,7 @@ public class TaskServerConfig {
 					// 定义队列
 					rabbitAdmin.declareQueue(new Queue(queueName, true));
 					// 定义交换机
-					rabbitAdmin.declareExchange(new DirectExchange(queueName, true, false));
+					rabbitAdmin.declareExchange(ExchangeBuilder.directExchange(queueName).durable(true).build());
 					// 绑定
 					rabbitAdmin
 							.declareBinding(new Binding(queueName, DestinationType.QUEUE, queueName, queueName, null));

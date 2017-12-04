@@ -54,7 +54,6 @@ public class TaskScheduler {
 	 */
 	private TaskRunnerContainer taskRunnerContainer;
 
-
 	/**
 	 * rpc异步调用线程池
 	 */
@@ -66,8 +65,8 @@ public class TaskScheduler {
 		this.rabbitTemplate = rabbitTemplate;
 		this.taskRunnerContainer = taskRunnerContainer;
 		this.globalSequenceManager = globalSequenceManager;
-		taskRpcService = new ThreadPoolExecutor(taskProperties.getTaskRpcMinThreadNum(), taskProperties.getTaskRpcMaxThreadNum(), 20L, TimeUnit.SECONDS,
-				new SynchronousQueue<Runnable>(),
+		taskRpcService = new ThreadPoolExecutor(taskProperties.getTaskRpcMinThreadNum(),
+				taskProperties.getTaskRpcMaxThreadNum(), 20L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(),
 				new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskRpc-%d").build());
 	}
 
@@ -84,8 +83,8 @@ public class TaskScheduler {
 		String queue = TaskMetaInfoManager.getFitQueue(taskData);
 		rabbitTemplate.convertAndSend(queue, queue, taskData);
 	}
-
-
+	
+	
 	/**
 	 * 同步执行任务，可能会导致阻塞。
 	 *
@@ -137,10 +136,11 @@ public class TaskScheduler {
 			return retdata;
 		}
 	}
-	
+
 	/**
 	 * 远程运行任务，并返回future<TaskData<?,?>>。 如果需要获得数据，可以使用futrue.get()来获得。
 	 * 此方法要谨慎使用，因为task存在限速，大并发下可能会导致线程数超。
+	 * 
 	 * @param runTarget
 	 *            目标主机配置名，如果没有，则为空
 	 * @param taskData
@@ -151,7 +151,7 @@ public class TaskScheduler {
 			final TypeReference<TaskData<TP, RD>> typeRef) {
 		taskData.setId(globalSequenceManager.nextId("task_runner_log"));
 		taskData.setQueueDate(new Date());
-		
+
 		// 当自动RPC，并且本地有runner，而且target匹配的时候，运行在本地模式下。
 		if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && TaskMetaInfoManager.checkRunnerRunLocal(taskData)) {
 			// 启动本地运行模式。
@@ -195,6 +195,5 @@ public class TaskScheduler {
 			return future;
 		}
 	}
-
 
 }

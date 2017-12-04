@@ -346,7 +346,12 @@ public class TaskData<TP,TD> implements Serializable {
      * 关联TAG，由调用方设定，用于第三方统计信息。
      */
     private String refTag;
-
+    
+    /**
+     * 任务延迟毫秒数。一般这个时间不宜太长，大多数情况下不要超过60秒。
+     */
+    private long taskDelay;
+    
     /**
      * 关联id，由调用方根据需要设置，用于第三方统计信息。
      */

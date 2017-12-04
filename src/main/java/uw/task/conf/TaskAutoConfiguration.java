@@ -1,5 +1,9 @@
 package uw.task.conf;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.annotation.PreDestroy;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
@@ -21,16 +25,18 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.client.RestTemplate;
+
 import redis.clients.jedis.JedisPoolConfig;
 import uw.task.TaskListenerManager;
 import uw.task.TaskScheduler;
 import uw.task.api.TaskAPI;
 import uw.task.container.TaskCronerContainer;
 import uw.task.container.TaskRunnerContainer;
-import uw.task.util.*;
-
-import javax.annotation.PreDestroy;
-import java.util.concurrent.atomic.AtomicBoolean;
+import uw.task.util.GlobalRateLimiter;
+import uw.task.util.GlobalSequenceManager;
+import uw.task.util.LeaderVote;
+import uw.task.util.LocalRateLimiter;
+import uw.task.util.TaskMessageConverter;
 
 /**
  * 自动装配类 Created by Acris on 2017/5/23.

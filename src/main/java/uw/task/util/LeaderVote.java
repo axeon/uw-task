@@ -1,15 +1,16 @@
 package uw.task.util;
 
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.BoundValueOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import uw.task.conf.TaskProperties;
 
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
+import uw.task.conf.TaskProperties;
 
 /**
  * 使用Reids的setnx+expire来选举Leader，来在多个运行实例中选举出一个运行全局任务的实例。
