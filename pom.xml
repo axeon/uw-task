@@ -70,7 +70,7 @@
         <dependency>
             <groupId>com.umtone</groupId>
             <artifactId>uw-auth-client</artifactId>
-            <version>1.5.3</version>
+            <version>1.5.5</version>
         </dependency>
     </dependencies>
 
