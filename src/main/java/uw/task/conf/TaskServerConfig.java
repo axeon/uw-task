@@ -1,10 +1,5 @@
 package uw.task.conf;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.AcknowledgeMode;
@@ -18,7 +13,6 @@ import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
-
 import uw.task.TaskCroner;
 import uw.task.TaskRunner;
 import uw.task.api.TaskAPI;
@@ -28,6 +22,11 @@ import uw.task.entity.TaskContact;
 import uw.task.entity.TaskCronerConfig;
 import uw.task.entity.TaskRunnerConfig;
 import uw.task.util.TaskMessageConverter;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 根据从服务器端加载的信息来配置服务和任务项。
@@ -433,7 +432,6 @@ public class TaskServerConfig {
 	/**
 	 * 注册单个任务
 	 *
-	 * @param hostConfig
 	 * @param runnerConfig
 	 */
 	private void registerRunner(TaskRunnerConfig runnerConfig) {
@@ -465,9 +463,8 @@ public class TaskServerConfig {
 					container.setStartConsumerMinInterval(1000);
 					container.setMaxConcurrentConsumers(runnerConfig.getConsumerNum());
 					container.setConcurrentConsumers((int) Math.ceil(runnerConfig.getConsumerNum() * 0.2f));
+                    container.setPrefetchCount(runnerConfig.getPrefetchNum());
 					container.setConnectionFactory(taskConnectionFactory);
-					container.setMaxConcurrentConsumers(runnerConfig.getConsumerNum());
-					container.setPrefetchCount(runnerConfig.getPrefetchNum());
 					container.setAcknowledgeMode(AcknowledgeMode.AUTO);
 					container.setQueueNames(queueName);
 					MessageListenerAdapter listenerAdapter = new MessageListenerAdapter(taskRunnerContainer, "process");
@@ -489,8 +486,9 @@ public class TaskServerConfig {
 		} else {
 			if (runnerConfig.getState() == 1) {
 				try {
-					container.setConcurrentConsumers(runnerConfig.getConsumerNum());
-					container.setPrefetchCount(runnerConfig.getConsumerNum());
+                    container.setMaxConcurrentConsumers(runnerConfig.getConsumerNum());
+                    container.setConcurrentConsumers((int) Math.ceil(runnerConfig.getConsumerNum() * 0.2f));
+                    container.setPrefetchCount(runnerConfig.getPrefetchNum());
 				} catch (Exception e) {
 					log.error(e.getMessage(), e);
 				}
