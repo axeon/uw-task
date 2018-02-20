@@ -25,11 +25,6 @@ public class TaskScheduler {
     private static final Logger log = LoggerFactory.getLogger(TaskScheduler.class);
 
     /**
-     * Task配置文件
-     */
-    private TaskProperties taskProperties;
-
-    /**
      * rabbitTemplate模板.
      */
     private AmqpTemplate rabbitTemplate;
@@ -51,7 +46,6 @@ public class TaskScheduler {
 
     public TaskScheduler(TaskProperties taskProperties, AmqpTemplate rabbitTemplate,
                          TaskRunnerContainer taskRunnerContainer, GlobalSequenceManager globalSequenceManager) {
-        this.taskProperties = taskProperties;
         this.rabbitTemplate = rabbitTemplate;
         this.taskRunnerContainer = taskRunnerContainer;
         this.globalSequenceManager = globalSequenceManager;
