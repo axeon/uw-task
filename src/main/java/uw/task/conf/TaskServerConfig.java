@@ -489,7 +489,7 @@ public class TaskServerConfig {
 			if (runnerConfig.getState() == 1) {
 				try {
                     container.setMaxConcurrentConsumers(runnerConfig.getConsumerNum());
-                    container.setConcurrentConsumers((int) Math.ceil(runnerConfig.getConsumerNum() * 0.2f));
+                    container.setConcurrentConsumers((int) Math.ceil(runnerConfig.getConsumerNum() * 0.1f));
                     container.setPrefetchCount(runnerConfig.getPrefetchNum());
 				} catch (Exception e) {
 					log.error(e.getMessage(), e);
