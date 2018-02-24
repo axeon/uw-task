@@ -459,10 +459,12 @@ public class TaskServerConfig {
 					container.setAutoStartup(false);
 					container.setTaskExecutor(new SimpleAsyncTaskExecutor(queueName));
 					// 提高启动consumer速度。
+                    container.setStartConsumerMinInterval(1000);
 					container.setConsecutiveActiveTrigger(3);
-					container.setStartConsumerMinInterval(1000);
+                    container.setStopConsumerMinInterval(20000);
+                    container.setConsecutiveIdleTrigger(3);
 					container.setMaxConcurrentConsumers(runnerConfig.getConsumerNum());
-					container.setConcurrentConsumers((int) Math.ceil(runnerConfig.getConsumerNum() * 0.2f));
+                    container.setConcurrentConsumers((int) Math.ceil(runnerConfig.getConsumerNum() * 0.1f));
                     container.setPrefetchCount(runnerConfig.getPrefetchNum());
 					container.setConnectionFactory(taskConnectionFactory);
 					container.setAcknowledgeMode(AcknowledgeMode.AUTO);
