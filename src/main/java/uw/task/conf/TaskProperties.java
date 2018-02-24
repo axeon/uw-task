@@ -1,8 +1,8 @@
 package uw.task.conf;
 
-import java.util.UUID;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
+
+import java.util.UUID;
 
 /**
  * 任务配置类。
@@ -29,7 +29,7 @@ public class TaskProperties {
     /**
      * croner线程数，默认在30个。
      */
-    private int cronerThreadNum = 30;
+    private int cronerThreadNum = 3;
     
     /**
      * 任务日志最小线程数,用于发送日志。
