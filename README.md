@@ -18,7 +18,7 @@ uw-task包是一个分布式任务框架，通过uw-task可以快速构建分布
 <dependency>
 	<groupId>com.umtone</groupId>
 	<artifactId>uw-task</artifactId>
-	<version>2.1.9</version>
+	<version>2.1.15</version>
 </dependency>
 ```
 
@@ -39,11 +39,11 @@ uw:
     # 私有模式。不运行全局target任务。
     privacy-mode: false
     # croner线程数
-    croner-thread-num: 30
-    task-log-min-thread-num: 1
-    task-log-max-thread-num: 100
+    croner-thread-num: 3
+    task-log-min-thread-num: 10
+    task-log-max-thread-num: 200
     task-rpc-min-thread-num: 1
-    task-rpc-max-thread-num: 100
+    task-rpc-max-thread-num: 200
 
     # rabbitmq
     rabbitmq:
