@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.core.*;
+import org.springframework.core.ParameterizedTypeReference;
 import uw.task.conf.TaskMetaInfoManager;
 import uw.task.conf.TaskProperties;
 import uw.task.container.TaskRunnerContainer;
@@ -125,7 +126,7 @@ public class TaskScheduler {
      * @return
      */
     public <TP, RD> Future<TaskData<TP, RD>> runTaskAsync(final TaskData<TP, RD> taskData,
-                                                          final TypeReference<TaskData<TP, RD>> typeRef) {
+                                                          final ParameterizedTypeReference<TaskData<TP, RD>> typeRef) {
         taskData.setId(globalSequenceManager.nextId("task_runner_log"));
         taskData.setQueueDate(new Date());
 
@@ -148,7 +149,7 @@ public class TaskScheduler {
             Future<TaskData<TP, RD>> future = taskRpcService.submit(() -> {
                 String queue = TaskMetaInfoManager.getFitQueue(taskData);
                 @SuppressWarnings("unchecked")
-                TaskData<TP, RD> retdata = (TaskData<TP, RD>) rabbitTemplate.convertSendAndReceive(queue, queue,
+                TaskData<TP, RD> retdata = (TaskData<TP, RD>) rabbitTemplate.convertSendAndReceiveAsType(queue, queue,
                         taskData, new MessagePostProcessor() {
 
                             @Override
@@ -159,14 +160,7 @@ public class TaskScheduler {
                                 mp.setExpiration("180000");
                                 return message;
                             }
-                        });
-                if (typeRef != null) {
-                    try {
-                        retdata = TaskMessageConverter.getTaskObjectMapper().convertValue(retdata, typeRef);
-                    } catch (Exception e) {
-                        log.error(e.getMessage(), e);
-                    }
-                }
+                        }, typeRef);
                 return retdata;
             });
             return future;

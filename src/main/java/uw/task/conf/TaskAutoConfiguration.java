@@ -1,9 +1,5 @@
 package uw.task.conf;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.annotation.PreDestroy;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
@@ -22,21 +18,19 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.client.RestTemplate;
-
-import redis.clients.jedis.JedisPoolConfig;
 import uw.task.TaskListenerManager;
 import uw.task.TaskScheduler;
 import uw.task.api.TaskAPI;
 import uw.task.container.TaskCronerContainer;
 import uw.task.container.TaskRunnerContainer;
-import uw.task.util.GlobalRateLimiter;
-import uw.task.util.GlobalSequenceManager;
-import uw.task.util.LeaderVote;
-import uw.task.util.LocalRateLimiter;
-import uw.task.util.TaskMessageConverter;
+import uw.task.util.*;
+
+import javax.annotation.PreDestroy;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 自动装配类 Created by Acris on 2017/5/23.
@@ -243,13 +237,23 @@ public class TaskAutoConfiguration {
      * @return
      */
     private RedisConnectionFactory getTaskRedisConnectionFactory(final TaskProperties taskProperties) {
-        JedisPoolConfig config = new JedisPoolConfig();
-        config.setMaxIdle(taskProperties.getRedis().getPool().getMaxIdle());
-        config.setMinIdle(taskProperties.getRedis().getPool().getMinIdle());
-        config.setMaxWaitMillis(taskProperties.getRedis().getPool().getMaxWait());
-        config.setMaxTotal(taskProperties.getRedis().getPool().getMaxActive());
 
-        JedisConnectionFactory factory = new JedisConnectionFactory(config);
+        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
+
+        config.setHostName(taskProperties.getRedis().getHost());
+        config.setPort(taskProperties.getRedis().getPort());
+        config.setDatabase(taskProperties.getRedis().getDatabase());
+//        if (taskProperties.getRedis().getPassword() != null) {
+//            config.setPassword(taskProperties.getRedis().getPassword());
+//        }
+//
+//        config.setTimeout(taskProperties.getRedis().getTimeout());
+//        config.setMaxIdle(taskProperties.getRedis().getPool().getMaxIdle());
+//        config.setMinIdle(taskProperties.getRedis().getPool().getMinIdle());
+//        config.setMaxWaitMillis(taskProperties.getRedis().getPool().getMaxWait());
+//        config.setMaxTotal(taskProperties.getRedis().getPool().getMaxActive());
+
+        LettuceConnectionFactory factory = new LettuceConnectionFactory(config);
         factory.setHostName(taskProperties.getRedis().getHost());
         factory.setPort(taskProperties.getRedis().getPort());
         factory.setDatabase(taskProperties.getRedis().getDatabase());
