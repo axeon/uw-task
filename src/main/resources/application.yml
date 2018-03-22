@@ -31,12 +31,13 @@ uw:
       host: 127.0.0.1
       port: 6379
       password: password
-      pool:
-        max-active: 20
-        max-wait: 60
-        max-idle: 8
-        min-idle: 1
-      timeout: 0
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 8
+          max-wait: -1ms
+          min-idle: 0
+      timeout: 30s
 
   #任务管理服务器认证相关配置
   auth:

@@ -1,9 +1,7 @@
 package uw.task.conf;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.annotation.PreDestroy;
-
+import io.lettuce.core.resource.ClientResources;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
@@ -14,34 +12,41 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
+import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.PropertyMapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisPassword;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.client.RestTemplate;
-
-import redis.clients.jedis.JedisPoolConfig;
 import uw.task.TaskListenerManager;
 import uw.task.TaskScheduler;
 import uw.task.api.TaskAPI;
 import uw.task.container.TaskCronerContainer;
 import uw.task.container.TaskRunnerContainer;
-import uw.task.util.GlobalRateLimiter;
-import uw.task.util.GlobalSequenceManager;
-import uw.task.util.LeaderVote;
-import uw.task.util.LocalRateLimiter;
-import uw.task.util.TaskMessageConverter;
+import uw.task.util.*;
+
+import javax.annotation.PreDestroy;
+import java.time.Duration;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 自动装配类 Created by Acris on 2017/5/23.
  */
 @Configuration
+@EnableScheduling
 @EnableConfigurationProperties({TaskProperties.class})
 @AutoConfigureAfter({RedisAutoConfiguration.class, RabbitAutoConfiguration.class})
 public class TaskAutoConfiguration {
@@ -76,13 +81,16 @@ public class TaskAutoConfiguration {
      * @param taskListenerManager
      * @return TaskScheduler
      */
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Bean
     public TaskScheduler taskScheduler(final ApplicationContext context, final TaskProperties taskProperties,
-                                       @Qualifier("tokenRestTemplate") final RestTemplate restTemplate, final TaskListenerManager taskListenerManager) {
+                                       @Qualifier("tokenRestTemplate") final RestTemplate restTemplate,
+                                       final TaskListenerManager taskListenerManager,
+                                       final ClientResources clientResources) {
         // task自定义的rabbit连接工厂
-        ConnectionFactory taskRabbitConnectionFactory = getTaskRabbitConnectionFactory(taskProperties);
+        ConnectionFactory taskRabbitConnectionFactory = getTaskRabbitConnectionFactory(taskProperties.getRabbitmq());
         // task自定义的redis连接工厂
-        RedisConnectionFactory taskRedisConnectionFactory = getTaskRedisConnectionFactory(taskProperties);
+        RedisConnectionFactory taskRedisConnectionFactory = getTaskRedisConnectionFactory(taskProperties.getRedis(), clientResources);
         // 本地限速器。
         LocalRateLimiter localRateLimiter = new LocalRateLimiter();
         // 全局限速器
@@ -177,47 +185,66 @@ public class TaskAutoConfiguration {
     /**
      * 获得任务自定义的rabbitConnectionFactory
      *
-     * @param taskProperties
-     * @return
+     * @param rabbitProperties RabbitMQ配置
+     * @return ConnectionFactory
      */
-    private ConnectionFactory getTaskRabbitConnectionFactory(TaskProperties taskProperties) {
-        RabbitConnectionFactoryBean factory = new RabbitConnectionFactoryBean();
-        if (taskProperties.getRabbitmq().getHost() != null) {
-            factory.setHost(taskProperties.getRabbitmq().getHost());
+    private ConnectionFactory getTaskRabbitConnectionFactory(TaskProperties.RabbitProperties rabbitProperties) {
+        PropertyMapper map = PropertyMapper.get();
+        RabbitConnectionFactoryBean factoryBean = new RabbitConnectionFactoryBean();
+        map.from(rabbitProperties::determineHost).whenNonNull().to(factoryBean::setHost);
+        map.from(rabbitProperties::determinePort).to(factoryBean::setPort);
+        map.from(rabbitProperties::determineUsername).whenNonNull()
+                .to(factoryBean::setUsername);
+        map.from(rabbitProperties::determinePassword).whenNonNull()
+                .to(factoryBean::setPassword);
+        map.from(rabbitProperties::determineVirtualHost).whenNonNull()
+                .to(factoryBean::setVirtualHost);
+        map.from(rabbitProperties::getRequestedHeartbeat).whenNonNull()
+                .asInt(Duration::getSeconds).to(factoryBean::setRequestedHeartbeat);
+        RabbitProperties.Ssl ssl = rabbitProperties.getSsl();
+        if (ssl.isEnabled()) {
+            factoryBean.setUseSSL(true);
+            map.from(ssl::getAlgorithm).whenNonNull().to(factoryBean::setSslAlgorithm);
+            map.from(ssl::getKeyStoreType).to(factoryBean::setKeyStoreType);
+            map.from(ssl::getKeyStore).to(factoryBean::setKeyStore);
+            map.from(ssl::getKeyStorePassword).to(factoryBean::setKeyStorePassphrase);
+            map.from(ssl::getTrustStoreType).to(factoryBean::setTrustStoreType);
+            map.from(ssl::getTrustStore).to(factoryBean::setTrustStore);
+            map.from(ssl::getTrustStorePassword).to(factoryBean::setTrustStorePassphrase);
         }
-        factory.setPort(taskProperties.getRabbitmq().getPort());
-        if (taskProperties.getRabbitmq().getUsername() != null) {
-            factory.setUsername(taskProperties.getRabbitmq().getUsername());
-        }
-        if (taskProperties.getRabbitmq().getPassword() != null) {
-            factory.setPassword(taskProperties.getRabbitmq().getPassword());
-        }
-        if (taskProperties.getRabbitmq().getVirtualHost() != null) {
-            factory.setVirtualHost(taskProperties.getRabbitmq().getVirtualHost());
-        }
-        if (taskProperties.getRabbitmq().getRequestedHeartbeat() != null) {
-            factory.setRequestedHeartbeat(taskProperties.getRabbitmq().getRequestedHeartbeat());
-        }
-        if (taskProperties.getRabbitmq().getConnectionTimeout() != null) {
-            factory.setConnectionTimeout(taskProperties.getRabbitmq().getConnectionTimeout());
-        }
+        map.from(rabbitProperties::getConnectionTimeout).whenNonNull()
+                .asInt(Duration::toMillis).to(factoryBean::setConnectionTimeout);
         try {
-            factory.afterPropertiesSet();
+            factoryBean.afterPropertiesSet();
         } catch (Exception e) {
             log.error("配置RabbitConnectionFactoryBean出错", e);
         }
-        com.rabbitmq.client.ConnectionFactory connectionFactory;
 
-        CachingConnectionFactory cachingConnectionFactory = null;
+        CachingConnectionFactory connFactory = null;
         try {
-            connectionFactory = factory.getObject();
-            cachingConnectionFactory = new CachingConnectionFactory(connectionFactory);
-            cachingConnectionFactory.setPublisherConfirms(taskProperties.getRabbitmq().isPublisherConfirms());
-            cachingConnectionFactory.setPublisherReturns(taskProperties.getRabbitmq().isPublisherReturns());
+            connFactory = new CachingConnectionFactory(factoryBean.getObject());
         } catch (Exception e) {
             log.error("获取ConnectionFactory出错", e);
         }
-        return cachingConnectionFactory;
+        map.from(rabbitProperties::determineAddresses).to(connFactory::setAddresses);
+        map.from(rabbitProperties::isPublisherConfirms).to(connFactory::setPublisherConfirms);
+        map.from(rabbitProperties::isPublisherReturns).to(connFactory::setPublisherReturns);
+        RabbitProperties.Cache.Channel channel = rabbitProperties.getCache().getChannel();
+        map.from(channel::getSize).whenNonNull().to(connFactory::setChannelCacheSize);
+        map.from(channel::getCheckoutTimeout).whenNonNull().as(Duration::toMillis)
+                .to(connFactory::setChannelCheckoutTimeout);
+        RabbitProperties.Cache.Connection connection = rabbitProperties.getCache()
+                .getConnection();
+        map.from(connection::getMode).whenNonNull().to(connFactory::setCacheMode);
+        map.from(connection::getSize).whenNonNull()
+                .to(connFactory::setConnectionCacheSize);
+
+        try {
+            connFactory.afterPropertiesSet();
+        } catch (Exception e) {
+            log.error("配置CachingConnectionFactory出错", e);
+        }
+        return connFactory;
     }
 
     /**
@@ -229,8 +256,6 @@ public class TaskAutoConfiguration {
     private RabbitTemplate getTaskRabbitTemplate(final ConnectionFactory connectionFactory) {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
         template.setMessageConverter(new TaskMessageConverter());
-        // template.setBeforePublishPostProcessors(new GZipPostProcessor());
-        // template.setAfterReceivePostProcessors(new GUnzipPostProcessor());
         template.setReplyTimeout(180000);
         template.afterPropertiesSet();
         return template;
@@ -239,24 +264,46 @@ public class TaskAutoConfiguration {
     /**
      * 自定义的redis链接工厂类。
      *
-     * @param taskProperties
+     * @param redisProperties
+     * @param clientResources
      * @return
      */
-    private RedisConnectionFactory getTaskRedisConnectionFactory(final TaskProperties taskProperties) {
-        JedisPoolConfig config = new JedisPoolConfig();
-        config.setMaxIdle(taskProperties.getRedis().getPool().getMaxIdle());
-        config.setMinIdle(taskProperties.getRedis().getPool().getMinIdle());
-        config.setMaxWaitMillis(taskProperties.getRedis().getPool().getMaxWait());
-        config.setMaxTotal(taskProperties.getRedis().getPool().getMaxActive());
-
-        JedisConnectionFactory factory = new JedisConnectionFactory(config);
-        factory.setHostName(taskProperties.getRedis().getHost());
-        factory.setPort(taskProperties.getRedis().getPort());
-        factory.setDatabase(taskProperties.getRedis().getDatabase());
-        factory.setTimeout(taskProperties.getRedis().getTimeout());
-        if (taskProperties.getRedis().getPassword() != null) {
-            factory.setPassword(taskProperties.getRedis().getPassword());
+    private RedisConnectionFactory getTaskRedisConnectionFactory(final TaskProperties.RedisProperties redisProperties,
+                                                                 final ClientResources clientResources) {
+        RedisProperties.Pool pool = redisProperties.getLettuce().getPool();
+        LettuceClientConfiguration.LettuceClientConfigurationBuilder builder;
+        if (pool == null) {
+            builder = LettuceClientConfiguration.builder();
+        } else {
+            GenericObjectPoolConfig config = new GenericObjectPoolConfig();
+            config.setMaxTotal(pool.getMaxActive());
+            config.setMaxIdle(pool.getMaxIdle());
+            config.setMinIdle(pool.getMinIdle());
+            if (pool.getMaxWait() != null) {
+                config.setMaxWaitMillis(pool.getMaxWait().toMillis());
+            }
+            builder = LettucePoolingClientConfiguration.builder().poolConfig(config);
         }
+
+        if (redisProperties.getTimeout() != null) {
+            builder.commandTimeout(redisProperties.getTimeout());
+        }
+        if (redisProperties.getLettuce() != null) {
+            RedisProperties.Lettuce lettuce = redisProperties.getLettuce();
+            if (lettuce.getShutdownTimeout() != null && !lettuce.getShutdownTimeout().isZero()) {
+                builder.shutdownTimeout(redisProperties.getLettuce().getShutdownTimeout());
+            }
+        }
+        builder.clientResources(clientResources);
+        LettuceClientConfiguration config = builder.build();
+
+        RedisStandaloneConfiguration standaloneConfig = new RedisStandaloneConfiguration();
+        standaloneConfig.setHostName(redisProperties.getHost());
+        standaloneConfig.setPort(redisProperties.getPort());
+        standaloneConfig.setPassword(RedisPassword.of(redisProperties.getPassword()));
+        standaloneConfig.setDatabase(redisProperties.getDatabase());
+
+        LettuceConnectionFactory factory = new LettuceConnectionFactory(standaloneConfig, config);
         factory.afterPropertiesSet();
         return factory;
     }

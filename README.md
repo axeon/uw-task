@@ -18,7 +18,7 @@ uw-task包是一个分布式任务框架，通过uw-task可以快速构建分布
 <dependency>
 	<groupId>com.umtone</groupId>
 	<artifactId>uw-task</artifactId>
-	<version>2.1.15</version>
+	<version>2.2.0</version>
 </dependency>
 ```
 
@@ -60,12 +60,13 @@ uw:
       host: 127.0.0.1
       port: 6379
       password: password
-      pool:
-        max-active: 20
-        max-wait: 60
-        max-idle: 8
-        min-idle: 1
-      timeout: 0
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 8
+          max-wait: -1ms
+          min-idle: 0
+      timeout: 30s
 
   #任务管理服务器认证相关配置
   auth:
