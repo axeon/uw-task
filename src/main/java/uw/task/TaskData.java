@@ -1,5 +1,7 @@
 package uw.task;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.io.Serializable;
 import java.util.Date;
 
@@ -9,6 +11,7 @@ import java.util.Date;
  *
  * @author axeon
  */
+@JsonIgnoreProperties({ "refObject"})
 public class TaskData<TP, RD> implements Serializable {
 
     /**
@@ -172,7 +175,7 @@ public class TaskData<TP, RD> implements Serializable {
     private int ranTimes;
 
     /**
-     * 执行状态，此信息由框架自动设置。
+     * 执行状态，此信息由框架根据异常自动设置。
      */
     private int state;
 

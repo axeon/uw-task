@@ -9,6 +9,7 @@ import uw.task.TaskCroner;
 import uw.task.TaskData;
 import uw.task.TaskRunner;
 import uw.task.entity.TaskCronerConfig;
+import uw.task.entity.TaskCronerLog;
 import uw.task.entity.TaskRunnerConfig;
 
 public class TaskMetaInfoManager {
@@ -214,4 +215,39 @@ public class TaskMetaInfoManager {
 		return sb.toString();
 	}
 
+    /**
+     * 获得RunnerLog配置KEY
+     *
+     * @return
+     */
+    public static String getRunnerLogKey(TaskData<?,?> log) {
+        StringBuilder sb = new StringBuilder(100);
+        sb.append(log.getTaskClass()).append("#");
+        if (log.getTaskTag() != null && log.getTaskTag().length() > 0) {
+            sb.append(log.getTaskTag());
+        }
+        sb.append("$");
+        if (log.getRunTarget() != null && log.getRunTarget().length() > 0) {
+            sb.append(log.getRunTarget());
+        }
+        return sb.toString();
+    }
+
+    /**
+     * 获得CronerLog配置KEY
+     *
+     * @return
+     */
+    public static String getCronerLogKey(TaskCronerLog log) {
+        StringBuilder sb = new StringBuilder(100);
+        sb.append(log.getTaskClass()).append("#");
+        if (log.getTaskParam() != null && log.getTaskParam().length()>0){
+            sb.append(log.getTaskParam());
+        }
+        sb.append("$");
+        if (log.getRunTarget() != null && log.getRunTarget().length() > 0) {
+            sb.append(log.getRunTarget());
+        }
+        return sb.toString();
+    }
 }

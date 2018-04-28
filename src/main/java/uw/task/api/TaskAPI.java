@@ -1,20 +1,16 @@
 package uw.task.api;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.client.RestTemplate;
 import uw.task.TaskData;
+import uw.task.service.TaskLogService;
 import uw.task.conf.TaskProperties;
 import uw.task.entity.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 对应服务器端的API接口实现。
@@ -38,19 +34,18 @@ public class TaskAPI {
     /**
      * 专门给日志发送使用的线程池。
      */
-    private ExecutorService taskLogService = null;
+    private TaskLogService taskLogService = null;
 
     /**
      * 本机的外网IP
      */
     private String hostIp = "";
 
-    public TaskAPI(final TaskProperties taskProperties, final RestTemplate restTemplate) {
+    public TaskAPI(final TaskProperties taskProperties, final RestTemplate restTemplate,
+                   final TaskLogService taskLogService) {
         this.taskProperties = taskProperties;
         this.restTemplate = restTemplate;
-        this.taskLogService = new ThreadPoolExecutor(taskProperties.getTaskLogMinThreadNum(), taskProperties.getTaskLogMaxThreadNum(), 20L, TimeUnit.SECONDS,
-                new SynchronousQueue<>(),
-                new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskLog-%d").build(), new ThreadPoolExecutor.CallerRunsPolicy());
+        this.taskLogService = taskLogService;
     }
 
     /**
@@ -223,14 +218,7 @@ public class TaskAPI {
      * @param taskData
      */
     public void sendTaskRunnerLog(TaskData<?, ?> taskData) {
-        taskLogService.submit(() -> {
-            try {
-                restTemplate.postForLocation(taskProperties.getServerHost() + "/taskapi/runner/log", taskData);
-            } catch (Exception e) {
-                log.error("TaskAPI.sendTaskRunnerLog日志发送到服务端异常:{}", e.getMessage());
-            }
-        });
-
+        taskLogService.writeRunnerLog(taskData);
     }
 
     /**
@@ -239,13 +227,6 @@ public class TaskAPI {
      * @param taskCronerLog
      */
     public void sendTaskCronerLog(TaskCronerLog taskCronerLog) {
-        taskLogService.submit(() -> {
-            try {
-                restTemplate.postForLocation(taskProperties.getServerHost() + "/taskapi/croner/log", taskCronerLog);
-            } catch (Exception e) {
-                log.error("TaskAPI.sendTaskCronerLog日志发送到服务端异常:{}", e.getMessage());
-            }
-        });
+        taskLogService.writeCronerLog(taskCronerLog);
     }
-
 }

@@ -4,7 +4,7 @@ uw:
     enable-task-registry: true
     project: com.demo.task
     #任务管理服务器地址
-    server-host: http://localhost:8080
+    server-host: http://192.168.88.88:58080
     # 主机名
     host-id: Dev Machine
     # 私有模式。不运行全局target任务。
@@ -18,36 +18,36 @@ uw:
 
     # rabbitmq
     rabbitmq:
-      host: 127.0.0.1
+      host: 192.168.88.67
       port: 5672
-      username: guest
-      password: guest
+      username: admin
+      password: leleku51766
       publisher-confirms: true
       virtual-host: /
   
     # redis 缓存
     redis:
-      database: 0
-      host: 127.0.0.1
+      database: 6
+      host: 192.168.88.67
       port: 6379
-      password: password
+      password: "Yrw@oYMSXO0fkXJzGKzC!85jmu27Ey"
       lettuce:
         pool:
           max-active: 20
           max-idle: 8
           max-wait: -1ms
           min-idle: 0
-      timeout: 30s
+        timeout: 30s
 
   #任务管理服务器认证相关配置
   auth:
     client:
       enable-spring-cloud: false
-      auth-server: http://localhost:9999
+      auth-server: http://192.168.88.88:9110
       login-entry-point: /api/auth/login
       refresh-entry-point: /api/auth/token
-      username: username
-      password: password
+      username: acris
+      password: 123456
       user-type: 1
       exit-on-auth-failed: false
       http-pool:
@@ -57,3 +57,6 @@ uw:
         connection-request-timeout: 1000
         socket-timeout: 1000
         keep-alive-time-if-not-present: 0
+  log:
+    es-config:
+      clusters: http://localhost:9200

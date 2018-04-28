@@ -75,12 +75,17 @@
         <dependency>
             <groupId>com.umtone</groupId>
             <artifactId>uw-auth-client</artifactId>
-            <version>2.0.5</version>
+            <version>2.0.6</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-pool2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.umtone</groupId>
+            <artifactId>uw-log-es</artifactId>
+            <version>0.0.1</version>
         </dependency>
     </dependencies>
 
