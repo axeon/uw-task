@@ -12,6 +12,10 @@ import uw.task.entity.TaskCronerConfig;
 import uw.task.entity.TaskCronerLog;
 import uw.task.entity.TaskRunnerConfig;
 
+/**
+ * Task元信息管理器
+ * @author aexon,liliang
+ */
 public class TaskMetaInfoManager {
 
 	/**

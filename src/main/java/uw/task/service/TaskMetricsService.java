@@ -1,7 +1,6 @@
 package uw.task.service;
 
 import com.google.common.collect.Maps;
-import org.springframework.data.redis.core.BoundSetOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.support.atomic.RedisAtomicLong;
 
