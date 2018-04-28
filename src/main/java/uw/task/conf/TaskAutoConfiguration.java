@@ -28,6 +28,7 @@ import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.client.RestTemplate;
@@ -36,11 +37,21 @@ import uw.task.TaskScheduler;
 import uw.task.api.TaskAPI;
 import uw.task.container.TaskCronerContainer;
 import uw.task.container.TaskRunnerContainer;
-import uw.task.util.*;
 
 import javax.annotation.PreDestroy;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import uw.log.LogClient;
+import uw.task.*;
+import uw.task.entity.TaskCronerLog;
+import uw.task.service.TaskLogService;
+import uw.task.service.TaskMetricsService;
+import uw.task.util.GlobalRateLimiter;
+import uw.task.util.GlobalSequenceManager;
+import uw.task.util.LeaderVote;
+import uw.task.util.LocalRateLimiter;
+import uw.task.util.TaskMessageConverter;
 
 /**
  * 自动装配类 Created by Acris on 2017/5/23.
@@ -68,25 +79,32 @@ public class TaskAutoConfiguration {
     private LeaderVote leaderVote;
 
     /**
+     * 日志服务
+     */
+    private TaskLogService taskLogService;
+
+    /**
      * 是否已初始化配置，保证只初始化一次；
      */
     private AtomicBoolean initFlag = new AtomicBoolean(false);
 
     /**
      * 声明 taskScheduler bean
-     *
      * @param context
      * @param taskProperties
      * @param restTemplate
      * @param taskListenerManager
-     * @return TaskScheduler
+     * @param clientResources
+     * @param logClient
+     * @return
      */
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Bean
     public TaskScheduler taskScheduler(final ApplicationContext context, final TaskProperties taskProperties,
                                        @Qualifier("tokenRestTemplate") final RestTemplate restTemplate,
                                        final TaskListenerManager taskListenerManager,
-                                       final ClientResources clientResources) {
+                                       final ClientResources clientResources,
+                                       final LogClient logClient) {
         // task自定义的rabbit连接工厂
         ConnectionFactory taskRabbitConnectionFactory = getTaskRabbitConnectionFactory(taskProperties.getRabbitmq());
         // task自定义的redis连接工厂
@@ -99,8 +117,14 @@ public class TaskAutoConfiguration {
         GlobalSequenceManager globalSequenceManager = new GlobalSequenceManager(taskRedisConnectionFactory);
         // Leader选举器
         leaderVote = new LeaderVote(taskRedisConnectionFactory, taskProperties);
+        // 日志服务
+        logClient.regLogObject(TaskCronerLog.class);
+        logClient.regLogObject(TaskData.class);
+        StringRedisTemplate redisTemplate = new StringRedisTemplate(taskRedisConnectionFactory);
+        TaskMetricsService taskMetricsService = new TaskMetricsService(redisTemplate);
+        taskLogService = new TaskLogService(logClient,taskMetricsService);
         // taskAPI
-        TaskAPI taskAPI = new TaskAPI(taskProperties, restTemplate);
+        TaskAPI taskAPI = new TaskAPI(taskProperties, restTemplate,taskLogService);
         // rabbit模板
         RabbitTemplate rabbitTemplate = getTaskRabbitTemplate(taskRabbitConnectionFactory);
         // rabiit管理器
@@ -139,6 +163,22 @@ public class TaskAutoConfiguration {
         if (initFlag.compareAndSet(false, true)) {
             serverConfig.init();
         }
+    }
+
+    /**
+     * 一秒写一次RunnerLog
+     */
+    @Scheduled(initialDelay = 0, fixedRate = 1000)
+    public void writeRunnerLog() {
+        taskLogService.sendRunnerLogToServer();
+    }
+
+    /**
+     * 一秒写一次CronerLog
+     */
+    @Scheduled(initialDelay = 0, fixedRate = 1000)
+    public void writeCronerLog() {
+        taskLogService.sendCronerLogToServer();
     }
 
     /**

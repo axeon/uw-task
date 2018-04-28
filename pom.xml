@@ -77,6 +77,11 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-pool2</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.umtone</groupId>
+            <artifactId>uw-log-es</artifactId>
+            <version>0.0.1</version>
+        </dependency>
     </dependencies>
 
 
