@@ -32,6 +32,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.client.RestTemplate;
+import uw.log.es.LogClient;
 import uw.task.TaskListenerManager;
 import uw.task.TaskScheduler;
 import uw.task.api.TaskAPI;
@@ -42,7 +43,6 @@ import javax.annotation.PreDestroy;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import uw.log.LogClient;
 import uw.task.*;
 import uw.task.entity.TaskCronerLog;
 import uw.task.service.TaskLogService;

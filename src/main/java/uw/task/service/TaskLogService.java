@@ -2,12 +2,10 @@ package uw.task.service;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.springframework.data.redis.support.atomic.RedisAtomicLong;
-import uw.log.LogClient;
+import uw.log.es.LogClient;
 import uw.task.TaskData;
 import uw.task.conf.TaskMetaInfoManager;
 import uw.task.entity.TaskCronerLog;
-import uw.task.util.GlobalSequenceManager;
 
 import java.util.*;
 import java.util.concurrent.locks.Lock;
