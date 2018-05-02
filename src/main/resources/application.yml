@@ -58,5 +58,7 @@ uw:
         socket-timeout: 1000
         keep-alive-time-if-not-present: 0
   log:
-    es-config:
+    es:
+      username: admin
+      password: admin
       clusters: http://localhost:9200
