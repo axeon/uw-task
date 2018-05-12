@@ -59,6 +59,6 @@ uw:
         keep-alive-time-if-not-present: 0
   log:
     es:
-      username: admin
-      password: admin
-      clusters: http://localhost:9200
+      clusters: http://192.168.88.16:9200
+server:
+  port: 8081
