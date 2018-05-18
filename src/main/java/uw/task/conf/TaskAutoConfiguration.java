@@ -55,6 +55,7 @@ import uw.task.util.TaskMessageConverter;
 
 /**
  * 自动装配类 Created by Acris on 2017/5/23.
+ * @author Acris,liliang
  */
 @Configuration
 @EnableScheduling
