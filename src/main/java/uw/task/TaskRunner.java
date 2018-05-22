@@ -17,11 +17,11 @@ public abstract class TaskRunner<TP, RD> {
     /**
      * 执行任务。 业务层面的异常请使用TaskExcpetion返回。 同时通过setExeInfo来写入执行信息。
      *
-     * @param taskdata 数据
+     * @param taskData 数据
      * @throws Exception 异常
      * @return 指定的返回对象
      */
-    public abstract RD runTask(TaskData<TP, RD> taskdata) throws Exception;
+    public abstract RD runTask(TaskData<TP, RD> taskData) throws Exception;
 
     /**
      * 初始化配置信息。
