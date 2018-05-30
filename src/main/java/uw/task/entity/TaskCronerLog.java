@@ -1,7 +1,7 @@
 package uw.task.entity;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import uw.log.es.ser.ObjectAsStringSerializer;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.io.Serializable;
 
@@ -10,6 +10,7 @@ import java.io.Serializable;
  *
  * @author axeon
  */
+@JsonIgnoreProperties({ "refObject"})
 public class TaskCronerLog implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -24,7 +25,6 @@ public class TaskCronerLog implements Serializable {
     /**
      * 关联对象，此对象不会发送到服务器端。
      */
-    @JsonSerialize(using = ObjectAsStringSerializer.class,as = String.class)
     private Object refObject;
 
     /**
