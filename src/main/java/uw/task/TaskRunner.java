@@ -1,5 +1,6 @@
 package uw.task;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import uw.task.entity.TaskContact;
 import uw.task.entity.TaskRunnerConfig;
 
@@ -15,7 +16,11 @@ import uw.task.entity.TaskRunnerConfig;
 public abstract class TaskRunner<TP, RD> {
 
     /**
-     * 执行任务。 业务层面的异常请使用TaskExcpetion返回。 同时通过setExeInfo来写入执行信息。
+     * 执行任务。
+     * 业务层面的异常请根据实际情况手动Throw TaskException:
+     * 目前支持的异常:
+     * 1. TaskDataException 任务数据异常
+     * 2. TaskPartnerException 任务合作方异常
      *
      * @param taskData 数据
      * @throws Exception 异常
@@ -24,16 +29,25 @@ public abstract class TaskRunner<TP, RD> {
     public abstract RD runTask(TaskData<TP, RD> taskData) throws Exception;
 
     /**
-     * 初始化配置信息。
+     * 初始化配置信息
+     *
      * @return TaskRunnerConfig配置
      */
     public abstract TaskRunnerConfig initConfig();
 
     /**
-     * 初始化联系人信息。
+     * 初始化联系人信息
      *
      * @return TaskContact联系人信息
      */
     public abstract TaskContact initContact();
 
+    /**
+     * 任务数据类型,禁止子类覆盖
+     *
+     * @return
+     */
+    public TypeReference<?> initTaskDataType() {
+        return new TypeReference<TaskData<TP,RD>>() {};
+    }
 }

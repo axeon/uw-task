@@ -1,8 +1,6 @@
 package uw.task;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import uw.task.util.ObjectAsStringSerializer;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -164,7 +162,6 @@ public class TaskData<TP, RD> implements Serializable {
     /**
      * 执行信息，用于存储框架自动设置。
      */
-    @JsonSerialize(using = ObjectAsStringSerializer.class,as = String.class)
     private RD resultData;
 
     /**
