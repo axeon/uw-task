@@ -6,8 +6,12 @@ import uw.log.es.LogClient;
 import uw.task.TaskData;
 import uw.task.conf.TaskMetaInfoManager;
 import uw.task.entity.TaskCronerLog;
+import uw.task.log.TaskDataLog;
 
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -27,7 +31,7 @@ public class TaskLogService {
     /**
      * 用于存储要保存的RunnerLog
      */
-    private List<TaskData<?,?>> runnerLogList = Lists.newArrayList();
+    private List<TaskDataLog> runnerLogList = Lists.newArrayList();
 
     /**
      * 用于锁定Croner数据列表
@@ -58,13 +62,10 @@ public class TaskLogService {
      * 写Runner日志
      * @param taskData
      */
-    public void writeRunnerLog(TaskData<?,?> taskData) {
+    public void writeRunnerLog(TaskData taskData) {
         runnerLogLock.lock();
         try {
-            if (taskData.getRunTarget() == null) {
-                taskData.setRunTarget("");
-            }
-            runnerLogList.add(taskData);
+            runnerLogList.add(new TaskDataLog(taskData));
         } finally {
             runnerLogLock.unlock();
         }
@@ -91,7 +92,7 @@ public class TaskLogService {
      */
     public void sendRunnerLogToServer() {
         // 从中获得list数据。
-        List<TaskData<?,?>> runnerLogData = null;
+        List<TaskDataLog> runnerLogData = null;
         runnerLogLock.lock();
         try {
             if (runnerLogList.size() > 0) {
@@ -107,9 +108,9 @@ public class TaskLogService {
 
         // 统计metrics数据
         Map<String, long[]> statsMap = Maps.newHashMap();
-        for (TaskData<?,?> log : runnerLogData) {
+        for (TaskDataLog log : runnerLogData) {
             // numAll,numFail,numFailProgram,numFailSetting,numFailPartner,numFailData,timeQueue,timeConsume,timeRun
-            String key = TaskMetaInfoManager.getRunnerLogKey(log);
+            String key = TaskMetaInfoManager.getRunnerLogKey(log.getTaskData());
             long[] metrics = statsMap.computeIfAbsent(key,pk -> new long[10]);
             metrics[0] += 1;
             // state: 1: 成功;2: 程序错误;3: 配置错误;4: 对方错误;5: 数据错误

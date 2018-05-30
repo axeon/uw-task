@@ -1,6 +1,6 @@
 package uw.task;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -11,7 +11,6 @@ import java.util.Date;
  *
  * @author axeon
  */
-@JsonIgnoreProperties({ "refObject"})
 public class TaskData<TP, RD> implements Serializable {
 
     /**
@@ -92,6 +91,7 @@ public class TaskData<TP, RD> implements Serializable {
     /**
      * 关联对象，此对象不存入数据库，但可以通过Listener来访问。
      */
+    @JsonIgnore
     private Object refObject;
 
     /**
