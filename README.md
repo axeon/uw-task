@@ -164,9 +164,9 @@ public class DemoTask extends TaskRunner<DemoTaskParam, String> {
 
 	
 	@Override
-	public String runTask(TaskData<DemoTaskParam, String> taskdata) throws TaskException {
-		log.info("这是一个DemoTask:{},{},{}", taskdata.getTaskParam().getId(), taskdata.getTaskParam().getName(),
-				taskdata.getTaskParam().getDate());
+	public String runTask(TaskData<DemoTaskParam, String> taskData) throws TaskException {
+		log.info("这是一个DemoTask:{},{},{}", taskData.getTaskParam().getId(), taskData.getTaskParam().getName(),
+				taskData.getTaskParam().getDate());
 		return "ok";
 	}
 	
@@ -246,9 +246,9 @@ private TaskScheduler taskScheduler;
  * 
  * @param target
  *            目标主机配置名，如果没有，则为空
- * @param taskdata
+ * @param taskData
  */
-public void sendToQueue(TaskData<?, ?> taskdata);
+public void sendToQueue(TaskData<?, ?> taskData);
 ```
 3. 同步执行任务
 运行期，程序根据runType判断，并结合任务代码是否在本地的判定，决定是运行在本地还是远程。
