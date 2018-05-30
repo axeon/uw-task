@@ -6,7 +6,7 @@ import uw.log.es.LogClient;
 import uw.task.TaskData;
 import uw.task.conf.TaskMetaInfoManager;
 import uw.task.entity.TaskCronerLog;
-import uw.task.log.TaskDataLog;
+import uw.task.entity.TaskRunnerLog;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -31,7 +31,7 @@ public class TaskLogService {
     /**
      * 用于存储要保存的RunnerLog
      */
-    private List<TaskDataLog> runnerLogList = Lists.newArrayList();
+    private List<TaskRunnerLog> runnerLogList = Lists.newArrayList();
 
     /**
      * 用于锁定Croner数据列表
@@ -65,7 +65,7 @@ public class TaskLogService {
     public void writeRunnerLog(TaskData taskData) {
         runnerLogLock.lock();
         try {
-            runnerLogList.add(new TaskDataLog(taskData));
+            runnerLogList.add(new TaskRunnerLog(taskData));
         } finally {
             runnerLogLock.unlock();
         }
@@ -92,7 +92,7 @@ public class TaskLogService {
      */
     public void sendRunnerLogToServer() {
         // 从中获得list数据。
-        List<TaskDataLog> runnerLogData = null;
+        List<TaskRunnerLog> runnerLogData = null;
         runnerLogLock.lock();
         try {
             if (runnerLogList.size() > 0) {
@@ -108,7 +108,7 @@ public class TaskLogService {
 
         // 统计metrics数据
         Map<String, long[]> statsMap = Maps.newHashMap();
-        for (TaskDataLog log : runnerLogData) {
+        for (TaskRunnerLog log : runnerLogData) {
             // numAll,numFail,numFailProgram,numFailSetting,numFailPartner,numFailData,timeQueue,timeConsume,timeRun
             String key = TaskMetaInfoManager.getRunnerLogKey(log.getTaskData());
             long[] metrics = statsMap.computeIfAbsent(key,pk -> new long[10]);

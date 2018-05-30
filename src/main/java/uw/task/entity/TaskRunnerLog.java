@@ -1,6 +1,8 @@
-package uw.task.log;
+package uw.task.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import uw.log.es.ser.ObjectAsStringSerializer;
 import uw.task.TaskData;
 
 import java.util.Date;
@@ -11,16 +13,15 @@ import java.util.Date;
  *
  * @author axeon
  */
-public class TaskDataLog {
+@JsonIgnoreProperties({ "refObject","taskData"})
+public class TaskRunnerLog {
 
-    @JsonIgnore
     private TaskData taskData;
 
-    public TaskDataLog(TaskData taskData) {
+    public TaskRunnerLog(TaskData taskData) {
         this.taskData = taskData;
     }
 
-    @JsonIgnore
     public TaskData getTaskData() {
         return taskData;
     }
@@ -88,6 +89,7 @@ public class TaskDataLog {
     /**
      * @return the taskParam
      */
+    @JsonSerialize(using = ObjectAsStringSerializer.class,as = String.class)
     public Object getTaskParam() {
         return taskData.getTaskParam();
     }
@@ -151,6 +153,7 @@ public class TaskDataLog {
     /**
      * @return the resultData
      */
+    @JsonSerialize(using = ObjectAsStringSerializer.class,as = String.class)
     public Object getResultData() {
         return taskData.getResultData();
     }

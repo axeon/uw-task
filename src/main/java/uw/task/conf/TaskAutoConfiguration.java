@@ -45,6 +45,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import uw.task.*;
 import uw.task.entity.TaskCronerLog;
+import uw.task.entity.TaskRunnerLog;
 import uw.task.service.TaskLogService;
 import uw.task.service.TaskMetricsService;
 import uw.task.util.GlobalRateLimiter;
@@ -120,7 +121,7 @@ public class TaskAutoConfiguration {
         leaderVote = new LeaderVote(taskRedisConnectionFactory, taskProperties);
         // 日志服务
         logClient.regLogObject(TaskCronerLog.class);
-        logClient.regLogObject(TaskData.class);
+        logClient.regLogObject(TaskRunnerLog.class);
         StringRedisTemplate redisTemplate = new StringRedisTemplate(taskRedisConnectionFactory);
         TaskMetricsService taskMetricsService = new TaskMetricsService(redisTemplate);
         taskLogService = new TaskLogService(logClient,taskMetricsService);
