@@ -1,10 +1,10 @@
 package uw.task.util;
 
 import java.io.IOException;
-import java.util.Map;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.amqp.core.Message;
@@ -15,6 +15,7 @@ import org.springframework.amqp.support.converter.MessageConversionException;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import uw.task.TaskData;
@@ -43,17 +44,12 @@ public class TaskMessageConverter extends AbstractJsonMessageConverter {
     /**
      * 泛型类型缓存
      */
-    private static Map<String, TypeReference<?>> dataTypeMap = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<String, JavaType> dataTypeMap = new ConcurrentHashMap<>();
 
     /**
      * json的mapper
      */
     private static ObjectMapper jsonObjectMapper;
-
-    /**
-     * 默认队列任务数据类型
-     */
-    private static final TypeReference<?> TASK_DATA_TYPE_REFERENCE = new TypeReference<TaskData<?,?>>(){};
 
     static {
         jsonObjectMapper = new ObjectMapper();
@@ -80,7 +76,7 @@ public class TaskMessageConverter extends AbstractJsonMessageConverter {
      * @param taskClass
      * @return
      */
-    public static TypeReference<?> getJavaTypeByTaskClass(String taskClass) {
+    public static JavaType getJavaTypeByTaskClass(String taskClass) {
         return dataTypeMap.get(taskClass);
     }
 
@@ -97,8 +93,52 @@ public class TaskMessageConverter extends AbstractJsonMessageConverter {
      * @param taskClass
      * @param taskRunner
      */
-    public static <TP,TD> void  constructTaskDataType(String taskClass, TaskRunner<TP,TD> taskRunner) {
-        dataTypeMap.put(taskClass, taskRunner.initTaskDataType());
+    public static void constructTaskDataType(String taskClass, TaskRunner<?, ?> taskRunner) {
+        // 解决多层继承问题
+        Class<?> pBizClz = taskRunner.getClass();
+        Type interfaceType = pBizClz.getGenericSuperclass();
+        while (!(interfaceType instanceof ParameterizedType)) {
+            pBizClz = pBizClz.getSuperclass();
+            interfaceType = pBizClz.getGenericSuperclass();
+        }
+        // 拿到泛参数
+        Type[] runnerTypes = ((ParameterizedType) interfaceType).getActualTypeArguments();
+        // 取JavaType数组
+        JavaType[] javaType = new JavaType[runnerTypes.length];
+        for (int i = 0; i < runnerTypes.length; i++) {
+            javaType[i] = getJavaTypeFromType(runnerTypes[i]);
+        }
+        JavaType taskDataType = jsonObjectMapper.getTypeFactory().constructParametricType(TaskData.class,
+                javaType);
+        dataTypeMap.put(taskClass, taskDataType);
+    }
+
+    /**
+     * 通过Type取JavaType
+     *
+     * @param type
+     * @return
+     */
+    private static JavaType getJavaTypeFromType(final Type type) {
+        Type pType = type;
+        if(pType instanceof ParameterizedType) {
+            // 根类型
+            JavaType rootJavaType = null;
+            while (pType instanceof ParameterizedType) {
+                ParameterizedType parameterizedType = ((ParameterizedType) pType);
+                Type[] ts = parameterizedType.getActualTypeArguments();
+                JavaType[] pJavaType = new JavaType[ts.length];
+                for (int x = 0; x < ts.length; x++) {
+                    pJavaType[x] = getJavaTypeFromType(ts[x]);
+                }
+                pType = pType.getClass().getGenericSuperclass();
+                rootJavaType = jsonObjectMapper.getTypeFactory()
+                        .constructParametricType((Class<?>) parameterizedType.getRawType(),
+                                pJavaType);
+            }
+            return rootJavaType;
+        }
+        return jsonObjectMapper.getTypeFactory().constructType(type);
     }
 
     @Override
@@ -109,11 +149,11 @@ public class TaskMessageConverter extends AbstractJsonMessageConverter {
             String contentType = properties.getContentType();
             if (contentType != null && contentType.equals(CONTENT_TYPE_TASK_DATA)) {
                 String taskClass = (String) properties.getHeaders().get(CONTENT_TYPE_TASK_CLASS);
-                TypeReference<?> type = null;
+                JavaType type = null;
                 if (taskClass != null) {
                     type = getJavaTypeByTaskClass(taskClass);
                 } else {
-                    type = TASK_DATA_TYPE_REFERENCE;
+                    type = jsonObjectMapper.constructType(TaskData.class);
                 }
                 try {
                     content = jsonObjectMapper.readValue(message.getBody(), type);
