@@ -2,8 +2,11 @@ package uw.task.entity;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import uw.task.util.TaskLogObjectAsStringSerializer;
 
 import java.io.Serializable;
+import java.util.Date;
 
 /**
  * taskCronerLog实体类。
@@ -31,12 +34,12 @@ public class TaskCronerLog implements Serializable {
      * 执行的类名
      */
     private String taskClass;
-    
+
     /**
      * 执行参数，可能用于区分子任务
      */
+    @JsonSerialize(using = TaskLogObjectAsStringSerializer.class,as = String.class)
     private String taskParam;
-
 
     /**
      * 运行类型。
@@ -86,6 +89,7 @@ public class TaskCronerLog implements Serializable {
     /**
      * 执行信息，用于存储任务完成信息。
      */
+    @JsonSerialize(using = TaskLogObjectAsStringSerializer.class,as = String.class)
     private String resultData;
 
     /**
@@ -93,229 +97,131 @@ public class TaskCronerLog implements Serializable {
      */
     private int state;
 
-    /**
-     * @return the id
-     */
     public long getId() {
         return id;
     }
 
-    /**
-     * @param id the id to set
-     */
     public void setId(long id) {
         this.id = id;
     }
 
-    /**
-     * @return the refId
-     */
     public long getRefId() {
         return refId;
     }
 
-    /**
-     * @param refId the refId to set
-     */
     public void setRefId(long refId) {
         this.refId = refId;
     }
 
-    /**
-     * @return the refObject
-     */
     public Object getRefObject() {
         return refObject;
     }
 
-    /**
-     * @param refObject the refObject to set
-     */
     public void setRefObject(Object refObject) {
         this.refObject = refObject;
     }
 
-    /**
-     * @return the taskClass
-     */
     public String getTaskClass() {
         return taskClass;
     }
 
-    /**
-     * @param taskClass the taskClass to set
-     */
     public void setTaskClass(String taskClass) {
         this.taskClass = taskClass;
     }
 
-    /**
-	 * @return the taskParam
-	 */
-	public String getTaskParam() {
-		return taskParam;
-	}
+    public String getTaskParam() {
+        return taskParam;
+    }
 
-	/**
-	 * @param taskParam the taskParam to set
-	 */
-	public void setTaskParam(String taskParam) {
-		this.taskParam = taskParam;
-	}
+    public void setTaskParam(String taskParam) {
+        this.taskParam = taskParam;
+    }
 
-	/**
-     * @return the runType
-     */
     public int getRunType() {
         return runType;
     }
 
-    /**
-     * @param runType the runType to set
-     */
     public void setRunType(int runType) {
         this.runType = runType;
     }
 
-    /**
-     * @return the runTarget
-     */
     public String getRunTarget() {
         return runTarget;
     }
 
-    /**
-     * @param runTarget the runTarget to set
-     */
     public void setRunTarget(String runTarget) {
         this.runTarget = runTarget;
     }
 
-    /**
-     * @return the hostIp
-     */
     public String getHostIp() {
         return hostIp;
     }
 
-    /**
-     * @param hostIp the hostIp to set
-     */
     public void setHostIp(String hostIp) {
         this.hostIp = hostIp;
     }
 
-    /**
-     * @return the hostId
-     */
     public String getHostId() {
         return hostId;
     }
 
-    /**
-     * @param hostId the hostId to set
-     */
     public void setHostId(String hostId) {
         this.hostId = hostId;
     }
 
-    /**
-     * @return the taskCron
-     */
     public String getTaskCron() {
         return taskCron;
     }
 
-    /**
-     * @param taskCron the taskCron to set
-     */
     public void setTaskCron(String taskCron) {
         this.taskCron = taskCron;
     }
 
-    /**
-     * @return the scheduleDate
-     */
-    public java.util.Date getScheduleDate() {
+    public Date getScheduleDate() {
         return scheduleDate;
     }
 
-    /**
-     * @param scheduleDate the scheduleDate to set
-     */
-    public void setScheduleDate(java.util.Date scheduleDate) {
+    public void setScheduleDate(Date scheduleDate) {
         this.scheduleDate = scheduleDate;
     }
 
-    /**
-     * @return the runDate
-     */
-    public java.util.Date getRunDate() {
+    public Date getRunDate() {
         return runDate;
     }
 
-    /**
-     * @param runDate the runDate to set
-     */
-    public void setRunDate(java.util.Date exeDate) {
-        this.runDate = exeDate;
+    public void setRunDate(Date runDate) {
+        this.runDate = runDate;
     }
 
-    /**
-     * @return the finishDate
-     */
-    public java.util.Date getFinishDate() {
+    public Date getFinishDate() {
         return finishDate;
     }
 
-    /**
-     * @param finishDate the finishDate to set
-     */
-    public void setFinishDate(java.util.Date finishDate) {
+    public void setFinishDate(Date finishDate) {
         this.finishDate = finishDate;
     }
 
-    /**
-     * @return the nextDate
-     */
-    public java.util.Date getNextDate() {
+    public Date getNextDate() {
         return nextDate;
     }
 
-    /**
-     * @param nextDate the nextDate to set
-     */
-    public void setNextDate(java.util.Date nextDate) {
+    public void setNextDate(Date nextDate) {
         this.nextDate = nextDate;
     }
 
-    /**
-     * @return the resultData
-     */
     public String getResultData() {
         return resultData;
     }
 
-    /**
-     * @param resultData the resultData to set
-     */
     public void setResultData(String resultData) {
         this.resultData = resultData;
     }
 
-    /**
-     * @return the status
-     */
     public int getState() {
         return state;
     }
 
-    /**
-     * @param status the status to set
-     */
-    public void setState(int status) {
-        this.state = status;
+    public void setState(int state) {
+        this.state = state;
     }
-
-
 }

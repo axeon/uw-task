@@ -54,6 +54,26 @@ public class TaskMetaInfoManager {
 		return runnerMap.get(taskClass);
 	}
 
+    /**
+     * 获得队列任务配置
+     *
+     * @param taskClass
+     * @return
+     */
+	public static TaskRunnerConfig getTaskRunnerConfig(String taskClass) {
+        return runnerConfigMap.get(taskClass);
+    }
+
+    /**
+     * 获得定时任务配置
+     *
+     * @param taskClass
+     * @return
+     */
+    public static TaskCronerConfig getTaskCronerConfig(String taskClass) {
+        return cronerConfigMap.get(taskClass);
+    }
+
 	/**
 	 * 检查一个runner是否可以在本地运行。
 	 * 

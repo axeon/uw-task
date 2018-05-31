@@ -1,5 +1,7 @@
 package uw.task.entity;
 
+import uw.task.util.TaskLogObjectAsStringSerializer;
+
 import java.io.Serializable;
 import java.util.Date;
 
@@ -184,6 +186,16 @@ public class TaskRunnerConfig implements Serializable {
 	 * 状态值
 	 */
 	private int state = 1;
+
+    /**
+     * 详见 TaskLogObjectAsStringSerializer 日志类型说明
+     */
+	private int logType = TaskLogObjectAsStringSerializer.TASK_LOG_TYPE_RECORD;
+
+    /**
+     * 日志字段大小限制: 0 表示无限制
+     */
+	private long logLimitSize = 0;
 
 	public TaskRunnerConfig() {
 	}
@@ -387,6 +399,20 @@ public class TaskRunnerConfig implements Serializable {
 	public void setState(int state) {
 		this.state = state;
 	}
-	
-	
+
+    public int getLogType() {
+        return logType;
+    }
+
+    public void setLogType(int logType) {
+        this.logType = logType;
+    }
+
+    public long getLogLimitSize() {
+        return logLimitSize;
+    }
+
+    public void setLogLimitSize(long logLimitSize) {
+        this.logLimitSize = logLimitSize;
+    }
 }

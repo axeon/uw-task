@@ -1,5 +1,7 @@
 package uw.task.entity;
 
+import uw.task.util.TaskLogObjectAsStringSerializer;
+
 import java.io.Serializable;
 
 /**
@@ -94,190 +96,152 @@ public class TaskCronerConfig implements Serializable {
 	 */
 	private int state = 1;
 
+    /**
+     * 详见 TaskLogObjectAsStringSerializer 日志类型说明
+     */
+    private int logType = TaskLogObjectAsStringSerializer.TASK_LOG_TYPE_RECORD;
+
+    /**
+     * 日志字段大小限制: 0 表示无限制
+     */
+    private long logLimitSize = 0;
+
 	public TaskCronerConfig() {
 	}
 
-	/**
-	 * @return the id
-	 */
-	public long getId() {
-		return id;
-	}
+    public long getId() {
+        return id;
+    }
 
-	/**
-	 * @param id
-	 *            the id to set
-	 */
-	public void setId(long id) {
-		this.id = id;
-	}
+    public void setId(long id) {
+        this.id = id;
+    }
 
-	/**
-	 * @return the taskName
-	 */
-	public String getTaskName() {
-		return taskName;
-	}
+    public String getTaskClass() {
+        return taskClass;
+    }
 
-	/**
-	 * @param taskName
-	 *            the taskName to set
-	 */
-	public void setTaskName(String taskName) {
-		this.taskName = taskName;
-	}
+    public void setTaskClass(String taskClass) {
+        this.taskClass = taskClass;
+    }
 
-	/**
-	 * @return the taskTag
-	 */
-	public String getTaskParam() {
-		return taskParam;
-	}
+    public String getTaskParam() {
+        return taskParam;
+    }
 
-	/**
-	 * @param taskTag
-	 *            the taskTag to set
-	 */
-	public void setTaskParam(String taskTag) {
-		this.taskParam = taskTag;
-	}
+    public void setTaskParam(String taskParam) {
+        this.taskParam = taskParam;
+    }
 
-	/**
-	 * @return the taskDesc
-	 */
-	public String getTaskDesc() {
-		return taskDesc;
-	}
+    public String getTaskName() {
+        return taskName;
+    }
 
-	/**
-	 * @param taskDesc
-	 *            the taskDesc to set
-	 */
-	public void setTaskDesc(String taskDesc) {
-		this.taskDesc = taskDesc;
-	}
+    public void setTaskName(String taskName) {
+        this.taskName = taskName;
+    }
 
-	/**
-	 * @return the taskClass
-	 */
-	public String getTaskClass() {
-		return taskClass;
-	}
+    public String getTaskDesc() {
+        return taskDesc;
+    }
 
-	/**
-	 * @param taskClass
-	 *            the taskClass to set
-	 */
-	public void setTaskClass(String taskClass) {
-		this.taskClass = taskClass;
-	}
+    public void setTaskDesc(String taskDesc) {
+        this.taskDesc = taskDesc;
+    }
 
-	/**
-	 * @return the cron
-	 */
-	public String getTaskCron() {
-		return taskCron;
-	}
+    public String getTaskCron() {
+        return taskCron;
+    }
 
-	/**
-	 * @param cron
-	 *            the cron to set
-	 */
-	public void setTaskCron(String cron) {
-		this.taskCron = cron;
-	}
+    public void setTaskCron(String taskCron) {
+        this.taskCron = taskCron;
+    }
 
-	/**
-	 * @return the runType
-	 */
-	public int getRunType() {
-		return runType;
-	}
+    public int getRunType() {
+        return runType;
+    }
 
-	/**
-	 * @param runType
-	 *            the runType to set
-	 */
-	public void setRunType(int runType) {
-		this.runType = runType;
-	}
+    public void setRunType(int runType) {
+        this.runType = runType;
+    }
 
-	/**
-	 * @return the runTarget
-	 */
-	public String getRunTarget() {
-		return runTarget;
-	}
+    public String getRunTarget() {
+        return runTarget;
+    }
 
-	/**
-	 * @param runTarget
-	 *            the runTarget to set
-	 */
-	public void setRunTarget(String runTarget) {
-		this.runTarget = runTarget;
-	}
+    public void setRunTarget(String runTarget) {
+        this.runTarget = runTarget;
+    }
 
-	public int getFailRate() {
-		return failRate;
-	}
+    public int getFailRate() {
+        return failRate;
+    }
 
-	public void setFailRate(int failRate) {
-		this.failRate = failRate;
-	}
+    public void setFailRate(int failRate) {
+        this.failRate = failRate;
+    }
 
-	public int getFailPartnerRate() {
-		return failPartnerRate;
-	}
+    public int getFailPartnerRate() {
+        return failPartnerRate;
+    }
 
-	public void setFailPartnerRate(int failPartnerRate) {
-		this.failPartnerRate = failPartnerRate;
-	}
+    public void setFailPartnerRate(int failPartnerRate) {
+        this.failPartnerRate = failPartnerRate;
+    }
 
-	public int getFailProgramRate() {
-		return failProgramRate;
-	}
+    public int getFailProgramRate() {
+        return failProgramRate;
+    }
 
-	public void setFailProgramRate(int failProgramRate) {
-		this.failProgramRate = failProgramRate;
-	}
+    public void setFailProgramRate(int failProgramRate) {
+        this.failProgramRate = failProgramRate;
+    }
 
-	public int getFailDataRate() {
-		return failDataRate;
-	}
+    public int getFailDataRate() {
+        return failDataRate;
+    }
 
-	public void setFailDataRate(int failDataRate) {
-		this.failDataRate = failDataRate;
-	}
+    public void setFailDataRate(int failDataRate) {
+        this.failDataRate = failDataRate;
+    }
 
-	public int getWaitTimeout() {
-		return waitTimeout;
-	}
+    public int getWaitTimeout() {
+        return waitTimeout;
+    }
 
-	public void setWaitTimeout(int waitTimeout) {
-		this.waitTimeout = waitTimeout;
-	}
+    public void setWaitTimeout(int waitTimeout) {
+        this.waitTimeout = waitTimeout;
+    }
 
-	public int getRunTimeout() {
-		return runTimeout;
-	}
+    public int getRunTimeout() {
+        return runTimeout;
+    }
 
-	public void setRunTimeout(int runTimeout) {
-		this.runTimeout = runTimeout;
-	}
+    public void setRunTimeout(int runTimeout) {
+        this.runTimeout = runTimeout;
+    }
 
-	/**
-	 * @return the status
-	 */
-	public int getState() {
-		return state;
-	}
+    public int getState() {
+        return state;
+    }
 
-	/**
-	 * @param status
-	 *            the status to set
-	 */
-	public void setState(int status) {
-		this.state = status;
-	}
+    public void setState(int state) {
+        this.state = state;
+    }
 
+    public int getLogType() {
+        return logType;
+    }
+
+    public void setLogType(int logType) {
+        this.logType = logType;
+    }
+
+    public long getLogLimitSize() {
+        return logLimitSize;
+    }
+
+    public void setLogLimitSize(long logLimitSize) {
+        this.logLimitSize = logLimitSize;
+    }
 }
