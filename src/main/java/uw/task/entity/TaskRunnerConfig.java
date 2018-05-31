@@ -1,7 +1,5 @@
 package uw.task.entity;
 
-import uw.task.util.TaskLogObjectAsStringSerializer;
-
 import java.io.Serializable;
 import java.util.Date;
 
@@ -64,6 +62,31 @@ public class TaskRunnerConfig implements Serializable {
 	 * 限速类型：根据当前IP和TaskData的RateLimitTag（推荐设定为接口配置ID）限速
 	 */
 	public static final int RATE_LIMIT_TYPE_TAG_IP = 10;
+
+    /**
+     * 什么都不记录
+     */
+    public static final int TASK_LOG_TYPE_NONE = -1;
+
+    /**
+     * 记录日志
+     */
+    public static final int TASK_LOG_TYPE_RECORD = 0;
+
+    /**
+     * 记录日志,含请求参数
+     */
+    public static final int TASK_LOG_TYPE_RECORD_TASK_PARAM = 1;
+
+    /**
+     * 记录日志,含返回参数
+     */
+    public static final int TASK_LOG_TYPE_RECORD_RESULT_DATA = 2;
+
+    /**
+     * 记录全部日志
+     */
+    public static final int TASK_LOG_TYPE_RECORD_ALL = 3;
 
 	private long id;
 
@@ -188,14 +211,14 @@ public class TaskRunnerConfig implements Serializable {
 	private int state = 1;
 
     /**
-     * 详见 TaskLogObjectAsStringSerializer 日志类型说明
+     * 详见日志类型说明
      */
-	private int logType = TaskLogObjectAsStringSerializer.TASK_LOG_TYPE_RECORD;
+	private int logType = TASK_LOG_TYPE_RECORD;
 
     /**
-     * 日志字段大小限制: 0 表示无限制
+     * 日志字符串字段大小限制: 0 表示无限制
      */
-	private long logLimitSize = 0;
+	private int logLimitSize = 0;
 
 	public TaskRunnerConfig() {
 	}
@@ -408,11 +431,11 @@ public class TaskRunnerConfig implements Serializable {
         this.logType = logType;
     }
 
-    public long getLogLimitSize() {
+    public int getLogLimitSize() {
         return logLimitSize;
     }
 
-    public void setLogLimitSize(long logLimitSize) {
+    public void setLogLimitSize(int logLimitSize) {
         this.logLimitSize = logLimitSize;
     }
 }

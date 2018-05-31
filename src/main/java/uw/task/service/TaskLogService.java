@@ -14,7 +14,6 @@ import uw.task.entity.TaskCronerConfig;
 import uw.task.entity.TaskCronerLog;
 import uw.task.entity.TaskRunnerConfig;
 import uw.task.entity.TaskRunnerLog;
-import uw.task.util.TaskLogObjectAsStringSerializer;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -27,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -74,39 +72,6 @@ public class TaskLogService {
      * Redis连接工厂
      */
     private final TaskMetricsService taskMetricsService;
-
-    /**
-     * 是否写TaskRunnerLog
-     */
-    private static final Predicate<TaskRunnerLog> IS_WRITE_TASK_RUNNER_LOG = new Predicate<TaskRunnerLog>() {
-        @Override
-        public boolean test(TaskRunnerLog taskRunnerLog) {
-            String taskClass = taskRunnerLog.getTaskClass();
-            if (StringUtils.isNotBlank(taskClass)) {
-                TaskRunnerConfig runnerConfig = TaskMetaInfoManager.getTaskRunnerConfig(taskClass);
-                return runnerConfig == null || runnerConfig.getLogType() > TaskLogObjectAsStringSerializer.TASK_LOG_TYPE_NONE;
-            }
-            // 默认还是记录的
-            return true;
-        }
-    };
-
-    /**
-     * 是否写TaskCronerLog
-     */
-    private static final Predicate<TaskCronerLog> IS_WRITE_TASK_CRONER_LOG = new Predicate<TaskCronerLog>() {
-        @Override
-        public boolean test(TaskCronerLog taskCronerLog) {
-            String taskClass = taskCronerLog.getTaskClass();
-            if (StringUtils.isNotBlank(taskClass)) {
-                TaskCronerConfig cronerConfig = TaskMetaInfoManager.getTaskCronerConfig(taskClass);
-                return cronerConfig == null || cronerConfig.getLogType() > TaskLogObjectAsStringSerializer.TASK_LOG_TYPE_NONE;
-            }
-            // 默认还是记录的
-            return true;
-        }
-    };
-
 
     public TaskLogService(final LogClient logClient, final TaskMetricsService taskMetricsService,
                           final TaskProperties taskProperties){
@@ -169,11 +134,12 @@ public class TaskLogService {
         }
 
         // 统计metrics数据
+        List<TaskRunnerLog> needWriteLog = Lists.newArrayList();
         Map<String, long[]> statsMap = Maps.newHashMap();
         for (TaskRunnerLog log : runnerLogData) {
             // numAll,numFail,numFailProgram,numFailSetting,numFailPartner,numFailData,timeQueue,timeConsume,timeRun
             String key = TaskMetaInfoManager.getRunnerLogKey(log.getTaskData());
-            long[] metrics = statsMap.computeIfAbsent(key,pk -> new long[10]);
+            long[] metrics = statsMap.computeIfAbsent(key, pk -> new long[10]);
             metrics[0] += 1;
             // state: 1: 成功;2: 程序错误;3: 配置错误;4: 对方错误;5: 数据错误
             if (log.getState() > 1) {
@@ -202,6 +168,17 @@ public class TaskLogService {
             }
             if (log.getFinishDate() != null && log.getRunDate() != null) {
                 metrics[9] += (log.getFinishDate().getTime() - log.getRunDate().getTime());
+            }
+            TaskRunnerConfig runnerConfig = TaskMetaInfoManager.getTaskRunnerConfig(key);
+            if (runnerConfig != null) {
+                int logType = runnerConfig.getLogType();
+                if (logType > TaskRunnerConfig.TASK_LOG_TYPE_NONE) {
+                    log.setLogType(logType);
+                    log.setLogLimitSize(runnerConfig.getLogLimitSize());
+                    needWriteLog.add(log);
+                }
+            } else {
+                needWriteLog.add(log);
             }
         }
         // 更新metrics数据。
@@ -250,8 +227,7 @@ public class TaskLogService {
             }
         }
         // 写入日志服务器
-        executorService.submit(new LogRunner<TaskRunnerLog>(logClient,
-                runnerLogData.stream().filter(IS_WRITE_TASK_RUNNER_LOG).collect(Collectors.toList())));
+        executorService.submit(new LogRunner<TaskRunnerLog>(logClient,needWriteLog));
     }
 
     /**
@@ -311,11 +287,12 @@ public class TaskLogService {
         if (cronerLogData == null){
             return;
         }
+        List<TaskCronerLog> needWriteLog = Lists.newArrayList();
         HashMap<String, CronerStatsInfo> statsMap = Maps.newHashMap();
         for (TaskCronerLog log : cronerLogData) {
             // numAll,numFail,numFailProgram,numFailPartner,numFailData,timeAll,timeWait,timeRun
             String key = TaskMetaInfoManager.getCronerLogKey(log);
-            CronerStatsInfo statsInfo = statsMap.computeIfAbsent(key,pk -> new CronerStatsInfo());
+            CronerStatsInfo statsInfo = statsMap.computeIfAbsent(key, pk -> new CronerStatsInfo());
             statsInfo.metrics[0] += 1;
             if (log.getState() > 1) {
                 if (log.getState() == 2) {
@@ -339,6 +316,46 @@ public class TaskLogService {
                 statsInfo.metrics[7] += (log.getFinishDate().getTime() - log.getRunDate().getTime());
             }
             statsInfo.nextRunDate = log.getNextDate();
+            int logType = log.getLogType();
+            int logLimitSize = log.getLogLimitSize();
+            if (logType > TaskCronerConfig.TASK_LOG_TYPE_NONE) {
+                switch (logType) {
+                    case TaskCronerConfig.TASK_LOG_TYPE_RECORD: {
+                        log.setTaskParam(null);
+                        log.setResultData(null);
+                    }
+                    break;
+                    case TaskCronerConfig.TASK_LOG_TYPE_RECORD_TASK_PARAM: {
+                        String taskParam = log.getTaskParam();
+                        if (logLimitSize > 0 && StringUtils.isNotBlank(taskParam) && taskParam.length() > logLimitSize) {
+                            log.setTaskParam(taskParam.substring(0, logLimitSize));
+                        }
+                        log.setResultData(null);
+                    }
+                    break;
+                    case TaskCronerConfig.TASK_LOG_TYPE_RECORD_RESULT_DATA: {
+                        String resultData = log.getResultData();
+                        if (logLimitSize > 0 && StringUtils.isNotBlank(resultData) && resultData.length() > logLimitSize) {
+                            log.setResultData(resultData.substring(0, logLimitSize));
+                        }
+                        log.setTaskParam(null);
+                    }
+                    break;
+                    case TaskCronerConfig.TASK_LOG_TYPE_RECORD_ALL: {
+                        String taskParam = log.getTaskParam();
+                        String resultData = log.getResultData();
+                        if (logLimitSize > 0) {
+                            if (StringUtils.isNotBlank(taskParam) && taskParam.length() > logLimitSize) {
+                                log.setTaskParam(taskParam.substring(0, logLimitSize));
+                            }
+                            if (StringUtils.isNotBlank(resultData) && resultData.length() > logLimitSize) {
+                                log.setResultData(resultData.substring(0, logLimitSize));
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
         }
         // 更新metrics数据。
         for (Map.Entry<String, CronerStatsInfo> kv : statsMap.entrySet()) {
@@ -378,7 +395,6 @@ public class TaskLogService {
             }
         }
         // 写入日志服务器
-        executorService.submit(new LogRunner<TaskCronerLog>(logClient,
-                cronerLogData.stream().filter(IS_WRITE_TASK_CRONER_LOG).collect(Collectors.toList())));
+        executorService.submit(new LogRunner<TaskCronerLog>(logClient,needWriteLog));
     }
 }

@@ -110,7 +110,7 @@ public class TaskCronerContainer {
             return false;
         }
         CronTrigger trigger = new CronTrigger(config.getTaskCron());
-        TaskCronerLog taskCronerLog = new TaskCronerLog();
+        TaskCronerLog taskCronerLog = new TaskCronerLog(config.getLogType(),config.getLogLimitSize());
         if (log.isDebugEnabled()) {
             log.debug("正在配置ID:{},CRONER:{},CRON:{},", config.getId(), config.getTaskClass(), config.getTaskCron());
         }

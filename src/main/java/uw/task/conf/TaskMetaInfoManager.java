@@ -57,21 +57,11 @@ public class TaskMetaInfoManager {
     /**
      * 获得队列任务配置
      *
-     * @param taskClass
+     * @param configKey
      * @return
      */
-	public static TaskRunnerConfig getTaskRunnerConfig(String taskClass) {
-        return runnerConfigMap.get(taskClass);
-    }
-
-    /**
-     * 获得定时任务配置
-     *
-     * @param taskClass
-     * @return
-     */
-    public static TaskCronerConfig getTaskCronerConfig(String taskClass) {
-        return cronerConfigMap.get(taskClass);
+	public static TaskRunnerConfig getTaskRunnerConfig(String configKey) {
+        return runnerConfigMap.get(configKey);
     }
 
 	/**

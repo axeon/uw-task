@@ -1,9 +1,10 @@
 package uw.task.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uw.httpclient.http.ObjectMapper;
 import uw.task.TaskData;
-import uw.task.util.TaskLogObjectAsStringSerializer;
 
 import java.util.Date;
 
@@ -13,8 +14,10 @@ import java.util.Date;
  *
  * @author axeon
  */
-@JsonIgnoreProperties({"taskData"})
+@JsonIgnoreProperties({"logType","logLimitSize","taskData"})
 public class TaskRunnerLog {
+
+    private static final Logger logger = LoggerFactory.getLogger(TaskRunnerLog.class);
 
     private TaskData taskData;
 
@@ -26,7 +29,7 @@ public class TaskRunnerLog {
     /**
      * logLimitSize。
      */
-    private long logLimitSize;
+    private int logLimitSize;
 
     public TaskRunnerLog(TaskData taskData) {
         this.taskData = taskData;
@@ -93,10 +96,27 @@ public class TaskRunnerLog {
     /**
      * @return the taskParam
      */
-    @JsonSerialize(using = TaskLogObjectAsStringSerializer.class,as = String.class)
-    public Object getTaskParam() {
-
-        return taskData.getTaskParam();
+    public String getTaskParam() {
+        Object value = taskData.getTaskParam();
+        if(value != null) {
+            if (logType == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_ALL ||
+                    logType == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_TASK_PARAM) {
+                String taskParam = null;
+                try {
+                    taskParam = ObjectMapper.DEFAULT_JSON_MAPPER.toString(value);
+                } catch (Exception e) {
+                    logger.error(e.getMessage(), e);
+                }
+                if (taskParam != null) {
+                    if (logLimitSize > 0 && taskParam.length() > logLimitSize) {
+                        taskParam = taskParam.substring(0, logLimitSize);
+                    }
+                    return taskParam;
+                }
+                return "JSON序列化出错,请注意排查程序: task_class = " + getTaskClass();
+            }
+        }
+        return null;
     }
 
     /**
@@ -158,10 +178,27 @@ public class TaskRunnerLog {
     /**
      * @return the resultData
      */
-    @JsonSerialize(using = TaskLogObjectAsStringSerializer.class,as = String.class)
-    public Object getResultData() {
-//        if (logType==TaskRunnerConfig)
-        return taskData.getResultData();
+    public String getResultData() {
+        Object value = taskData.getResultData();
+        if (value != null) {
+            if (logType == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_ALL ||
+                    logType == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_RESULT_DATA) {
+                String resultData = null;
+                try {
+                    resultData = ObjectMapper.DEFAULT_JSON_MAPPER.toString(value);
+                } catch (Exception e) {
+                    logger.error(e.getMessage(), e);
+                }
+                if (resultData != null) {
+                    if (logLimitSize > 0 && resultData.length() > logLimitSize) {
+                        resultData = resultData.substring(0, logLimitSize);
+                    }
+                    return resultData;
+                }
+                return "JSON序列化出错,请注意排查程序: task_class = " + getTaskClass();
+            }
+        }
+        return null;
     }
 
     /**
@@ -183,5 +220,21 @@ public class TaskRunnerLog {
      */
     public int getState() {
         return taskData.getState();
+    }
+
+    public int getLogType() {
+        return logType;
+    }
+
+    public void setLogType(int logType) {
+        this.logType = logType;
+    }
+
+    public int getLogLimitSize() {
+        return logLimitSize;
+    }
+
+    public void setLogLimitSize(int logLimitSize) {
+        this.logLimitSize = logLimitSize;
     }
 }

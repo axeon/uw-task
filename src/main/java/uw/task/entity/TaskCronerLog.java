@@ -1,9 +1,6 @@
 package uw.task.entity;
 
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import uw.task.util.TaskLogObjectAsStringSerializer;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -13,7 +10,7 @@ import java.util.Date;
  *
  * @author axeon
  */
-@JsonIgnoreProperties({ "refObject"})
+@JsonIgnoreProperties({ "refObject","logType","logLimitSize"})
 public class TaskCronerLog implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -38,7 +35,6 @@ public class TaskCronerLog implements Serializable {
     /**
      * 执行参数，可能用于区分子任务
      */
-    @JsonSerialize(using = TaskLogObjectAsStringSerializer.class,as = String.class)
     private String taskParam;
 
     /**
@@ -89,13 +85,27 @@ public class TaskCronerLog implements Serializable {
     /**
      * 执行信息，用于存储任务完成信息。
      */
-    @JsonSerialize(using = TaskLogObjectAsStringSerializer.class,as = String.class)
     private String resultData;
 
     /**
      * 执行状态
      */
     private int state;
+
+    /**
+     * 详见日志类型配置说明
+     */
+    private int logType;
+
+    /**
+     * 日志字符串字段大小限制: 0 表示无限制
+     */
+    private int logLimitSize;
+
+    public TaskCronerLog(int logType, int logLimitSize) {
+        this.logType = logType;
+        this.logLimitSize = logLimitSize;
+    }
 
     public long getId() {
         return id;
@@ -223,5 +233,21 @@ public class TaskCronerLog implements Serializable {
 
     public void setState(int state) {
         this.state = state;
+    }
+
+    public int getLogType() {
+        return logType;
+    }
+
+    public void setLogType(int logType) {
+        this.logType = logType;
+    }
+
+    public int getLogLimitSize() {
+        return logLimitSize;
+    }
+
+    public void setLogLimitSize(int logLimitSize) {
+        this.logLimitSize = logLimitSize;
     }
 }
