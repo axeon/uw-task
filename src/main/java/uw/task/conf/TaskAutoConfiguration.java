@@ -43,7 +43,6 @@ import javax.annotation.PreDestroy;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import uw.task.*;
 import uw.task.entity.TaskCronerLog;
 import uw.task.entity.TaskRunnerLog;
 import uw.task.service.TaskLogService;
@@ -124,7 +123,7 @@ public class TaskAutoConfiguration {
         logClient.regLogObject(TaskRunnerLog.class);
         StringRedisTemplate redisTemplate = new StringRedisTemplate(taskRedisConnectionFactory);
         TaskMetricsService taskMetricsService = new TaskMetricsService(redisTemplate);
-        taskLogService = new TaskLogService(logClient,taskMetricsService);
+        taskLogService = new TaskLogService(logClient,taskMetricsService,taskProperties);
         // taskAPI
         TaskAPI taskAPI = new TaskAPI(taskProperties, restTemplate,taskLogService);
         // rabbit模板
