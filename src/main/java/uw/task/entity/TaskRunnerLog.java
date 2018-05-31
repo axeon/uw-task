@@ -13,10 +13,20 @@ import java.util.Date;
  *
  * @author axeon
  */
-@JsonIgnoreProperties({ "refObject","taskData"})
+@JsonIgnoreProperties({"taskData"})
 public class TaskRunnerLog {
 
     private TaskData taskData;
+
+    /**
+     * log类型。
+     */
+    private int logType;
+
+    /**
+     * logLimitSize。
+     */
+    private long logLimitSize;
 
     public TaskRunnerLog(TaskData taskData) {
         this.taskData = taskData;
@@ -61,12 +71,6 @@ public class TaskRunnerLog {
         return taskData.getRateLimitTag();
     }
 
-    /**
-     * @return the refObject
-     */
-    public Object getRefObject() {
-        return taskData.getRefObject();
-    }
 
     /**
      * @return the taskClass
@@ -91,6 +95,7 @@ public class TaskRunnerLog {
      */
     @JsonSerialize(using = TaskLogObjectAsStringSerializer.class,as = String.class)
     public Object getTaskParam() {
+
         return taskData.getTaskParam();
     }
 
@@ -155,6 +160,7 @@ public class TaskRunnerLog {
      */
     @JsonSerialize(using = TaskLogObjectAsStringSerializer.class,as = String.class)
     public Object getResultData() {
+//        if (logType==TaskRunnerConfig)
         return taskData.getResultData();
     }
 
