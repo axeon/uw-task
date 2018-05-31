@@ -342,9 +342,9 @@ public class TaskLogService {
                     }
                     break;
                     case TaskCronerConfig.TASK_LOG_TYPE_RECORD_ALL: {
-                        String taskParam = log.getTaskParam();
-                        String resultData = log.getResultData();
                         if (logLimitSize > 0) {
+                            String taskParam = log.getTaskParam();
+                            String resultData = log.getResultData();
                             if (StringUtils.isNotBlank(taskParam) && taskParam.length() > logLimitSize) {
                                 log.setTaskParam(taskParam.substring(0, logLimitSize));
                             }
@@ -355,6 +355,7 @@ public class TaskLogService {
                     }
                     break;
                 }
+                needWriteLog.add(log);
             }
         }
         // 更新metrics数据。
