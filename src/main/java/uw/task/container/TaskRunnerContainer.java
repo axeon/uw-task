@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uw.auth.client.AuthClientProperties;
 import uw.task.TaskData;
 import uw.task.TaskListenerManager;
 import uw.task.TaskRunner;
@@ -57,23 +58,25 @@ public class TaskRunnerContainer {
 	private TaskListenerManager taskListenerManager;
 
 	/**
-	 * 任务配置
+	 * 主机配置
 	 */
-	private TaskProperties taskProperties;
+	private AuthClientProperties authClientProperties;
 
 	/**
 	 * 默认构造器。
 	 * 
-	 * @param taskProperties
+	 * @param authClientProperties
 	 * @param taskAPI
 	 * @param localRateLimiter
 	 * @param globalRateLimiter
 	 * @param taskListenerManager
 	 */
-	public TaskRunnerContainer(TaskProperties taskProperties, TaskAPI taskAPI, LocalRateLimiter localRateLimiter,
-			GlobalRateLimiter globalRateLimiter, TaskListenerManager taskListenerManager) {
-		super();
-		this.taskProperties = taskProperties;
+	public TaskRunnerContainer(final AuthClientProperties authClientProperties,
+                               final TaskAPI taskAPI,
+                               final LocalRateLimiter localRateLimiter,
+                               final GlobalRateLimiter globalRateLimiter,
+                               final TaskListenerManager taskListenerManager) {
+		this.authClientProperties = authClientProperties;
 		this.taskAPI = taskAPI;
 		this.localRateLimiter = localRateLimiter;
 		this.globalRateLimiter = globalRateLimiter;
@@ -101,7 +104,7 @@ public class TaskRunnerContainer {
 		// 设置运行标记
 		taskData.setHostIp(taskAPI.getHostIp());
 		// 设置主机ID
-		taskData.setHostId(taskProperties.getHostId());
+		taskData.setHostId(authClientProperties.getHostId());
 		// 增加执行信息
 		taskData.setRanTimes(taskData.getRanTimes() + 1);
 

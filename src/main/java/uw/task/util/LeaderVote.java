@@ -10,6 +10,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.BoundValueOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
+import uw.auth.client.AuthClientProperties;
 import uw.task.conf.TaskProperties;
 
 /**
@@ -34,12 +35,12 @@ public class LeaderVote {
 	/**
 	 * task配置
 	 */
-	private final TaskProperties taskProperties;
+	private final AuthClientProperties authClientProperties;
 
-	public LeaderVote(final RedisConnectionFactory redisConnectionFactory, TaskProperties taskProperties) {
+	public LeaderVote(final RedisConnectionFactory redisConnectionFactory, final AuthClientProperties authClientProperties) {
 		this.stringRedisTemplate = new StringRedisTemplate(redisConnectionFactory);
         this.stringRedisTemplate.afterPropertiesSet();
-		this.taskProperties = taskProperties;
+		this.authClientProperties = authClientProperties;
 	}
 
 	/**
@@ -122,7 +123,7 @@ public class LeaderVote {
 		/**
 		 * 默认构造器。
 		 * 
-		 * @param bvo
+		 * @param name
 		 */
 		public VoteInfo(String name) {
 			this.bvo = stringRedisTemplate.boundValueOps(REDIS_TAG + name);
@@ -143,9 +144,9 @@ public class LeaderVote {
 		 */
 		public boolean checkLeader() {
 			// 使用setnx来抢leader身份
-			bvo.setIfAbsent(taskProperties.getHostId());
+			bvo.setIfAbsent(authClientProperties.getHostId());
 			// 再次确认身份，并更新expire。
-			if (taskProperties.getHostId().equals(bvo.get())) {
+			if (authClientProperties.getHostId().equals(bvo.get())) {
 				bvo.expire(60, TimeUnit.SECONDS);
 				isLeader = true;
 			} else {
