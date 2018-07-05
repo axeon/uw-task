@@ -1,10 +1,10 @@
 package uw.task.util;
 
-import java.io.IOException;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.concurrent.ConcurrentHashMap;
-
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.amqp.core.Message;
@@ -12,35 +12,32 @@ import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.support.converter.AbstractJsonMessageConverter;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConversionException;
-
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
+import org.springframework.amqp.support.converter.SmartMessageConverter;
+import org.springframework.core.ParameterizedTypeReference;
 import uw.task.TaskData;
 import uw.task.TaskRunner;
+
+import java.io.IOException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 用于spring-amqp的消息转换器。
  *
  * @author axeon
- *
  */
-public class TaskMessageConverter extends AbstractJsonMessageConverter {
-
-    private static Log log = LogFactory.getLog(Jackson2JsonMessageConverter.class);
+public class TaskMessageConverter extends AbstractJsonMessageConverter implements SmartMessageConverter {
 
     /**
      * 数据类型
      */
     public static final String CONTENT_TYPE_TASK_DATA = "TASK_DATA";
-
     /**
      * 数据类型
      */
     public static final String CONTENT_TYPE_TASK_CLASS = "TASK_CLASS";
-
+    private static Log log = LogFactory.getLog(Jackson2JsonMessageConverter.class);
     /**
      * 泛型类型缓存
      */
@@ -65,11 +62,6 @@ public class TaskMessageConverter extends AbstractJsonMessageConverter {
     public TaskMessageConverter() {
     }
 
-    @Override
-    public void setBeanClassLoader(ClassLoader classLoader) {
-        super.setBeanClassLoader(classLoader);
-    }
-
     /**
      * 根据taskClass获得指定的JavaType
      *
@@ -85,6 +77,27 @@ public class TaskMessageConverter extends AbstractJsonMessageConverter {
      */
     public static ObjectMapper getTaskObjectMapper() {
         return jsonObjectMapper;
+    }
+
+    /**
+     * 根据消息，构造TaskData对象。
+     *
+     * @param message
+     * @param valueTypeRef
+     * @param <T>
+     * @return
+     * @throws IOException
+     */
+    public static <T> T constructTaskData(Message message, TypeReference valueTypeRef) {
+        if (message == null || message.getBody() == null || message.getMessageProperties() == null) {
+            return null;
+        }
+        try {
+            return jsonObjectMapper.readValue(message.getBody(), valueTypeRef);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+        }
+        return null;
     }
 
     /**
@@ -121,7 +134,7 @@ public class TaskMessageConverter extends AbstractJsonMessageConverter {
      */
     private static JavaType getJavaTypeFromType(final Type type) {
         Type pType = type;
-        if(pType instanceof ParameterizedType) {
+        if (pType instanceof ParameterizedType) {
             // 根类型
             JavaType rootJavaType = null;
             while (pType instanceof ParameterizedType) {
@@ -142,28 +155,70 @@ public class TaskMessageConverter extends AbstractJsonMessageConverter {
     }
 
     @Override
+    public void setBeanClassLoader(ClassLoader classLoader) {
+        super.setBeanClassLoader(classLoader);
+    }
+
+    @Override
     public Object fromMessage(Message message) throws MessageConversionException {
         Object content = null;
+        if (message == null || message.getBody() == null || message.getMessageProperties() == null) {
+            return null;
+        }
         MessageProperties properties = message.getMessageProperties();
-        if (properties != null) {
-            String contentType = properties.getContentType();
-            if (contentType != null && contentType.equals(CONTENT_TYPE_TASK_DATA)) {
-                String taskClass = (String) properties.getHeaders().get(CONTENT_TYPE_TASK_CLASS);
-                JavaType type = null;
-                if (taskClass != null) {
-                    type = getJavaTypeByTaskClass(taskClass);
-                } else {
-                    type = jsonObjectMapper.constructType(TaskData.class);
-                }
-                try {
-                    content = jsonObjectMapper.readValue(message.getBody(), type);
-                } catch (Exception e) {
-                    throw new MessageConversionException("Failed to convert Message content", e);
-                }
+        String contentType = properties.getContentType();
+        if (CONTENT_TYPE_TASK_DATA.equals(contentType)) {
+            String taskClass = (String) properties.getHeaders().get(CONTENT_TYPE_TASK_CLASS);
+            JavaType type;
+            if (taskClass != null) {
+                type = getJavaTypeByTaskClass(taskClass);
             } else {
-                if (log.isWarnEnabled()) {
-                    log.warn("Could not convert incoming message with content-type [" + contentType + "]");
-                }
+                type = jsonObjectMapper.constructType(TaskData.class);
+            }
+            try {
+                content = jsonObjectMapper.readValue(message.getBody(), type);
+            } catch (Exception e) {
+                throw new MessageConversionException("Failed to convert Message content", e);
+            }
+        } else {
+            if (log.isWarnEnabled()) {
+                log.warn("Could not convert incoming message with content-type [" + contentType + "]");
+            }
+        }
+
+        return content;
+    }
+
+
+    /**
+     * A variant of {@link #fromMessage(Message)} which takes an extra
+     * conversion context as an argument.
+     *
+     * @param message        the input message.
+     * @param conversionHint an extra object passed to the {
+     * @return the result of the conversion, or {@code null} if the converter cannot
+     * perform the conversion.
+     * @throws MessageConversionException if the conversion fails.
+     * @see #fromMessage(Message)
+     */
+    @Override
+    public Object fromMessage(Message message, Object conversionHint) throws MessageConversionException {
+        Object content = null;
+        if (message == null || message.getBody() == null || message.getMessageProperties() == null) {
+            return null;
+        }
+        MessageProperties properties = message.getMessageProperties();
+        String contentType = properties.getContentType();
+        if (CONTENT_TYPE_TASK_DATA.equals(contentType)) {
+            try {
+                content = jsonObjectMapper.readValue(message.getBody(), jsonObjectMapper.getTypeFactory().constructType(
+                        ((ParameterizedTypeReference<?>) conversionHint).getType()));
+            } catch (Exception e) {
+                throw new MessageConversionException("Failed to convert Message content", e);
+            }
+        } else {
+            if (log.isWarnEnabled()) {
+                log.warn("Could not convert incoming message with content-type [" + contentType + "]");
             }
         }
         return content;
@@ -187,4 +242,5 @@ public class TaskMessageConverter extends AbstractJsonMessageConverter {
         messageProperties.setContentLength(bytes.length);
         return new Message(bytes, messageProperties);
     }
+
 }

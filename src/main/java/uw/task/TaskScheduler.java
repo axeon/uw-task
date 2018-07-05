@@ -4,9 +4,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.AmqpException;
-import org.springframework.amqp.core.*;
-import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageDeliveryMode;
+import org.springframework.amqp.core.MessageProperties;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import uw.task.conf.TaskMetaInfoManager;
 import uw.task.conf.TaskProperties;
 import uw.task.container.TaskRunnerContainer;
@@ -28,7 +29,7 @@ public class TaskScheduler {
     /**
      * rabbitTemplate模板.
      */
-    private AmqpTemplate rabbitTemplate;
+    private RabbitTemplate rabbitTemplate;
 
     /**
      * 全局sequence序列，主要用于taskLog日志。
@@ -45,7 +46,8 @@ public class TaskScheduler {
      */
     private ExecutorService taskRpcService = null;
 
-    public TaskScheduler(TaskProperties taskProperties, AmqpTemplate rabbitTemplate,
+
+    public TaskScheduler(TaskProperties taskProperties, RabbitTemplate rabbitTemplate,
                          TaskRunnerContainer taskRunnerContainer, GlobalSequenceManager globalSequenceManager) {
         this.rabbitTemplate = rabbitTemplate;
         this.taskRunnerContainer = taskRunnerContainer;
@@ -53,6 +55,7 @@ public class TaskScheduler {
         taskRpcService = new ThreadPoolExecutor(taskProperties.getTaskRpcMinThreadNum(),
                 taskProperties.getTaskRpcMaxThreadNum(), 20L, TimeUnit.SECONDS, new SynchronousQueue<>(),
                 new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskRpc-%d").build(), new ThreadPoolExecutor.CallerRunsPolicy());
+
     }
 
     /**
@@ -61,72 +64,106 @@ public class TaskScheduler {
      * @param taskData 任务数据
      */
     public void sendToQueue(final TaskData<?, ?> taskData) {
+        Message message = buildTaskQueueMessage(taskData);
+        String queue = message.getMessageProperties().getConsumerQueue();
+        rabbitTemplate.send(queue, queue, message);
+    }
+
+    /**
+     * 把任务发送到队列中
+     *
+     * @param message 任务消息
+     */
+    public void sendToQueue(final Message message) {
+        String queue = message.getMessageProperties().getConsumerQueue();
+        rabbitTemplate.convertAndSend(queue, queue, message);
+    }
+
+
+    /**
+     * 构造Task消息对象，此方法用于提前构造TaskData。
+     *
+     * @param taskData
+     * @return
+     */
+    public Message buildTaskQueueMessage(final TaskData taskData) {
         taskData.setId(globalSequenceManager.nextId("task_runner_log"));
         taskData.setQueueDate(new Date());
         taskData.setRunType(TaskData.RUN_TYPE_GLOBAL);
-        String queue = TaskMetaInfoManager.getFitQueue(taskData);
-        rabbitTemplate.convertAndSend(queue, queue, taskData);
+        Message msg = rabbitTemplate.getMessageConverter().toMessage(taskData, new MessageProperties());
+        msg.getMessageProperties().setConsumerQueue(TaskMetaInfoManager.getFitQueue(taskData));
+        return msg;
     }
 
 
     /**
      * 同步执行任务，可能会导致阻塞。
+     *  在调用的时候，尤其要注意，taskData对象不可改变！
      *
-     * @param taskData  任务数据
+     * @param taskData 任务数据
+     * @return
+     */
+    public <TP, RD> TaskData<TP, RD> runTask(final TaskData<TP, RD> taskData) {
+        return runTask(taskData, null);
+    }
+
+    /**
+     * 同步执行任务，可能会导致阻塞。
+     *  在调用的时候，尤其要注意，taskData对象不可改变！
+     *
+     * @param taskData 任务数据
      * @return
      */
     public <TP, RD> TaskData<TP, RD> runTask(final TaskData<TP, RD> taskData,
                                              final TypeReference<TaskData<TP, RD>> typeRef) {
         taskData.setId(globalSequenceManager.nextId("task_runner_log"));
         taskData.setQueueDate(new Date());
-
         // 当自动RPC，并且本地有runner，而且target匹配的时候，运行在本地模式下。
         if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && TaskMetaInfoManager.checkRunnerRunLocal(taskData)) {
             // 启动本地运行模式。
             taskData.setRunType(TaskData.RUN_TYPE_LOCAL);
-        } else {
-            taskData.setRunType(TaskData.RUN_TYPE_GLOBAL_RPC);
-        }
-
-        if (taskData.getRunType() == TaskData.RUN_TYPE_LOCAL) {
             taskRunnerContainer.process(taskData);
             return taskData;
         } else {
+            taskData.setRunType(TaskData.RUN_TYPE_GLOBAL_RPC);
+            Message message = rabbitTemplate.getMessageConverter().toMessage(taskData, new MessageProperties());
+            //加入优先级信息。
+            MessageProperties mp = message.getMessageProperties();
+            mp.setPriority(10);
+            mp.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
+            mp.setExpiration("180000");
             // 全局运行模式
             String queue = TaskMetaInfoManager.getFitQueue(taskData);
-            @SuppressWarnings("unchecked")
-            TaskData<TP, RD> retdata = (TaskData<TP, RD>) rabbitTemplate.convertSendAndReceive(queue, queue, taskData,
-                    new MessagePostProcessor() {
-
-                        @Override
-                        public Message postProcessMessage(Message message) throws AmqpException {
-                            MessageProperties mp = message.getMessageProperties();
-                            mp.setPriority(10);
-                            mp.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
-                            mp.setExpiration("180000");
-                            return message;
-                        }
-                    });
-            if (typeRef != null) {
-                try {
-                    retdata = TaskMessageConverter.getTaskObjectMapper().convertValue(retdata, typeRef);
-                } catch (Exception e) {
-                    log.error(e.getMessage(), e);
-                }
+            Message retMessage = rabbitTemplate.sendAndReceive(queue, queue, message);
+            if (typeRef == null) {
+                return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage(retMessage);
+            } else {
+                return TaskMessageConverter.constructTaskData(retMessage, typeRef);
             }
-            return retdata;
         }
+    }
+
+
+    /**
+     * 远程运行任务，并返回future<TaskData<?,?>>。 如果需要获得数据，可以使用futrue.get()来获得。
+     * 此方法要谨慎使用，因为task存在限速，大并发下可能会导致线程数超。
+     *  在调用的时候，尤其要注意，taskData对象不可改变！
+     * @param taskData 任务数据
+     * @return
+     */
+    public <TP, RD> Future<TaskData<TP, RD>> runTaskAsync(final TaskData<TP, RD> taskData) {
+        return runTaskAsync(taskData, null);
     }
 
     /**
      * 远程运行任务，并返回future<TaskData<?,?>>。 如果需要获得数据，可以使用futrue.get()来获得。
      * 此方法要谨慎使用，因为task存在限速，大并发下可能会导致线程数超。
-     *
-     * @param taskData  任务数据
+     *  在调用的时候，尤其要注意，taskData对象不可改变！
+     * @param taskData 任务数据
      * @return
      */
     public <TP, RD> Future<TaskData<TP, RD>> runTaskAsync(final TaskData<TP, RD> taskData,
-                                                          final ParameterizedTypeReference<TaskData<TP, RD>> typeRef) {
+                                                          final TypeReference<TaskData<TP, RD>> typeRef) {
         taskData.setId(globalSequenceManager.nextId("task_runner_log"));
         taskData.setQueueDate(new Date());
 
@@ -134,10 +171,6 @@ public class TaskScheduler {
         if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && TaskMetaInfoManager.checkRunnerRunLocal(taskData)) {
             // 启动本地运行模式。
             taskData.setRunType(TaskData.RUN_TYPE_LOCAL);
-        } else {
-            taskData.setRunType(TaskData.RUN_TYPE_GLOBAL_RPC);
-        }
-        if (taskData.getRunType() == TaskData.RUN_TYPE_LOCAL) {
             // 启动本地运行模式。
             Future<TaskData<TP, RD>> future = taskRpcService.submit(() -> {
                 taskRunnerContainer.process(taskData);
@@ -146,25 +179,24 @@ public class TaskScheduler {
             return future;
         } else {
             // 全局运行模式
+           taskData.setRunType(TaskData.RUN_TYPE_GLOBAL_RPC);
+            Message message = rabbitTemplate.getMessageConverter().toMessage(taskData, new MessageProperties());
+            //加入优先级信息。
+            MessageProperties mp = message.getMessageProperties();
+            mp.setPriority(10);
+            mp.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
+            mp.setExpiration("180000");
+            String queue = TaskMetaInfoManager.getFitQueue(taskData);
             Future<TaskData<TP, RD>> future = taskRpcService.submit(() -> {
-                String queue = TaskMetaInfoManager.getFitQueue(taskData);
                 @SuppressWarnings("unchecked")
-                TaskData<TP, RD> retdata = (TaskData<TP, RD>) rabbitTemplate.convertSendAndReceiveAsType(queue, queue,
-                        taskData, new MessagePostProcessor() {
-
-                            @Override
-                            public Message postProcessMessage(Message message) throws AmqpException {
-                                MessageProperties mp = message.getMessageProperties();
-                                mp.setPriority(10);
-                                mp.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
-                                mp.setExpiration("180000");
-                                return message;
-                            }
-                        }, typeRef);
-                return retdata;
+                Message retMessage = rabbitTemplate.sendAndReceive(queue, queue, message);
+                if (typeRef == null) {
+                    return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage(retMessage);
+                } else {
+                    return TaskMessageConverter.constructTaskData(retMessage, typeRef);
+                }
             });
             return future;
         }
     }
-
 }
