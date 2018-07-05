@@ -32,6 +32,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.client.RestTemplate;
+import uw.auth.client.AuthClientProperties;
 import uw.log.es.LogClient;
 import uw.task.TaskListenerManager;
 import uw.task.TaskScheduler;
@@ -101,11 +102,15 @@ public class TaskAutoConfiguration {
      */
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Bean
-    public TaskScheduler taskScheduler(final ApplicationContext context, final TaskProperties taskProperties,
+    public TaskScheduler taskScheduler(final ApplicationContext context,
+                                       final TaskProperties taskProperties,
+                                       final AuthClientProperties authClientProperties,
                                        @Qualifier("tokenRestTemplate") final RestTemplate restTemplate,
                                        final TaskListenerManager taskListenerManager,
                                        final ClientResources clientResources,
                                        final LogClient logClient) {
+        // 委托给authClientProperties获取当前主机id
+        taskProperties.setHostId(authClientProperties.getHostId());
         // task自定义的rabbit连接工厂
         ConnectionFactory taskRabbitConnectionFactory = getTaskRabbitConnectionFactory(taskProperties.getRabbitmq());
         // task自定义的redis连接工厂
