@@ -16,7 +16,6 @@ import org.springframework.scheduling.support.CronTrigger;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-import uw.auth.client.AuthClientProperties;
 import uw.task.TaskCroner;
 import uw.task.TaskData;
 import uw.task.TaskListenerManager;
@@ -74,20 +73,13 @@ public class TaskCronerContainer {
      */
     private TaskProperties taskProperties;
 
-    /**
-     * 主机配置
-     */
-    private AuthClientProperties authClientProperties;
-
     public TaskCronerContainer(LeaderVote leaderVote, TaskAPI taskAPI, TaskListenerManager listenerManager,
-                               GlobalSequenceManager sequence, TaskProperties taskProperties,
-                               AuthClientProperties authClientProperties) {
+                               GlobalSequenceManager sequence, TaskProperties taskProperties) {
         this.leaderVote = leaderVote;
         this.taskAPI = taskAPI;
         this.listenerManager = listenerManager;
         this.sequence = sequence;
         this.taskProperties = taskProperties;
-        this.authClientProperties = authClientProperties;
         // 如果禁用任务注册，则croner线程数设置为1，节省资源。
         if (!taskProperties.isEnableTaskRegistry()) {
             taskProperties.setCronerThreadNum(1);
@@ -141,7 +133,7 @@ public class TaskCronerContainer {
                 taskCronerLog.setRunType(config.getRunType());
                 taskCronerLog.setRunTarget(config.getRunTarget());
                 taskCronerLog.setHostIp(taskAPI.getHostIp());
-                taskCronerLog.setHostId(authClientProperties.getHostId());
+                taskCronerLog.setHostId(taskProperties.getHostId());
                 taskCronerLog.setRunDate(new Date());
                 String data = "";
                 // 执行监听器操作

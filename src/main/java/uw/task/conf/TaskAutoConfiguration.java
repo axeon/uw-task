@@ -32,7 +32,6 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.client.RestTemplate;
-import uw.auth.client.AuthClientProperties;
 import uw.log.es.LogClient;
 import uw.task.TaskListenerManager;
 import uw.task.TaskScheduler;
@@ -94,7 +93,6 @@ public class TaskAutoConfiguration {
      * 声明 taskScheduler bean
      * @param context
      * @param taskProperties
-     * @param authClientProperties
      * @param restTemplate
      * @param taskListenerManager
      * @param clientResources
@@ -104,7 +102,6 @@ public class TaskAutoConfiguration {
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Bean
     public TaskScheduler taskScheduler(final ApplicationContext context, final TaskProperties taskProperties,
-                                       final AuthClientProperties authClientProperties,
                                        @Qualifier("tokenRestTemplate") final RestTemplate restTemplate,
                                        final TaskListenerManager taskListenerManager,
                                        final ClientResources clientResources,
@@ -120,7 +117,7 @@ public class TaskAutoConfiguration {
         // 全局sequence管理器
         GlobalSequenceManager globalSequenceManager = new GlobalSequenceManager(taskRedisConnectionFactory);
         // Leader选举器
-        leaderVote = new LeaderVote(taskRedisConnectionFactory, authClientProperties);
+        leaderVote = new LeaderVote(taskRedisConnectionFactory, taskProperties);
         // 日志服务
         logClient.regLogObject(TaskCronerLog.class);
         logClient.regLogObject(TaskRunnerLog.class);
@@ -128,16 +125,16 @@ public class TaskAutoConfiguration {
         TaskMetricsService taskMetricsService = new TaskMetricsService(redisTemplate);
         taskLogService = new TaskLogService(logClient,taskMetricsService,taskProperties);
         // taskAPI
-        TaskAPI taskAPI = new TaskAPI(taskProperties, authClientProperties, restTemplate,taskLogService);
+        TaskAPI taskAPI = new TaskAPI(taskProperties, restTemplate,taskLogService);
         // rabbit模板
         RabbitTemplate rabbitTemplate = getTaskRabbitTemplate(taskRabbitConnectionFactory);
         // rabiit管理器
         RabbitAdmin rabbitAdmin = new RabbitAdmin(taskRabbitConnectionFactory);
         // taskCronerContainer
         taskCronerContainer = new TaskCronerContainer(leaderVote, taskAPI, taskListenerManager,
-                globalSequenceManager, taskProperties,authClientProperties);
+                globalSequenceManager, taskProperties);
         // taskRunnerContainer
-        TaskRunnerContainer taskRunnerContainer = new TaskRunnerContainer(authClientProperties, taskAPI, localRateLimiter,
+        TaskRunnerContainer taskRunnerContainer = new TaskRunnerContainer(taskProperties, taskAPI, localRateLimiter,
                 globalRateLimiter, taskListenerManager);
         // 初始化TaskServerConfig
         serverConfig = new TaskServerConfig(context, taskProperties, taskRabbitConnectionFactory,

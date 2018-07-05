@@ -1,6 +1,10 @@
 package uw.task.conf;
 
+import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
+import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+
+import java.util.UUID;
 
 /**
  * 任务配置类。
@@ -48,6 +52,11 @@ public class TaskProperties {
      * RPC最大线程数,用于执行RPC调用，超过此线程数，将会导致阻塞。
      */
     private int taskRpcMaxThreadNum = 200;
+
+    /**
+     * 运行主机ID
+     */
+    private String hostId = UUID.randomUUID().toString();
 
     /**
      * 任务服务器
@@ -138,6 +147,20 @@ public class TaskProperties {
      */
     public void setProject(String project) {
         this.project = project;
+    }
+
+    /**
+     * @return the hostId
+     */
+    public String getHostId() {
+        return hostId;
+    }
+
+    /**
+     * @param hostId the hostId to set
+     */
+    public void setHostId(String hostId) {
+        this.hostId = hostId;
     }
 
     /**
