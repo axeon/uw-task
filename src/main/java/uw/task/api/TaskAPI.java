@@ -3,6 +3,7 @@ package uw.task.api;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.client.RestTemplate;
+import uw.auth.client.AuthClientProperties;
 import uw.task.TaskData;
 import uw.task.service.TaskLogService;
 import uw.task.conf.TaskProperties;
@@ -32,19 +33,27 @@ public class TaskAPI {
     private RestTemplate restTemplate;
 
     /**
+     * 主机配置Ids
+     */
+    AuthClientProperties authClientProperties;
+
+    /**
      * 专门给日志发送使用的线程池。
      */
-    private TaskLogService taskLogService = null;
+    private TaskLogService taskLogService;
 
     /**
      * 本机的外网IP
      */
     private String hostIp = "";
 
-    public TaskAPI(final TaskProperties taskProperties, final RestTemplate restTemplate,
+    public TaskAPI(final TaskProperties taskProperties,
+                   final AuthClientProperties authClientProperties,
+                   final RestTemplate restTemplate,
                    final TaskLogService taskLogService) {
         this.taskProperties = taskProperties;
         this.restTemplate = restTemplate;
+        this.authClientProperties = authClientProperties;
         this.taskLogService = taskLogService;
     }
 
@@ -92,7 +101,7 @@ public class TaskAPI {
     public String updateHostStatus() {
         String ip = "";
         TaskHostStatus taskHostStatus = new TaskHostStatus();
-        taskHostStatus.setHostId(taskProperties.getHostId());
+        taskHostStatus.setHostId(authClientProperties.getHostId());
         taskHostStatus.setTaskProject(taskProperties.getProject());
         try {
             ip = restTemplate.postForObject(taskProperties.getServerHost() + "/taskapi/host/status", taskHostStatus,
