@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.amqp.core.Message;
@@ -50,6 +51,7 @@ public class TaskMessageConverter extends AbstractJsonMessageConverter implement
 
     static {
         jsonObjectMapper = new ObjectMapper();
+        jsonObjectMapper.registerModule(new JavaTimeModule());
         jsonObjectMapper.setSerializationInclusion(Include.NON_DEFAULT);
         jsonObjectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
