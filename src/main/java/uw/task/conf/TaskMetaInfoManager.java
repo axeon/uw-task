@@ -100,16 +100,16 @@ public class TaskMetaInfoManager {
 		if (runnerConfigMap.containsKey(all)) {
 			return all;
 		}
+        // 检测去除TAG的情况
+        if (!all.contains("#$")) {
+            String test = all.substring(0, all.indexOf('#') + 1) + all.substring(all.lastIndexOf('$'), all.length());
+            if (runnerConfigMap.containsKey(test)) {
+                return test;
+            }
+        }
 		// 检测去除目标的情况
 		if (!all.endsWith("$")) {
 			String test = all.substring(0, all.lastIndexOf('$') + 1);
-			if (runnerConfigMap.containsKey(test)) {
-				return test;
-			}
-		}
-		// 检测去除TAG的情况
-		if (!all.contains("#$")) {
-			String test = all.substring(0, all.indexOf('#') + 1) + all.substring(all.lastIndexOf('$'), all.length());
 			if (runnerConfigMap.containsKey(test)) {
 				return test;
 			}
@@ -147,17 +147,17 @@ public class TaskMetaInfoManager {
 		if (config != null) {
 			return config;
 		}
+        // 检测去除TAG的情况
+        if (!all.contains("#$")) {
+            String test = all.substring(0, all.indexOf('#') + 1) + all.substring(all.lastIndexOf('$'), all.length());
+            config = runnerConfigMap.get(test);
+            if (config != null) {
+                return config;
+            }
+        }
 		// 检测去除目标的情况
 		if (!all.endsWith("$")) {
 			String test = all.substring(0, all.lastIndexOf('$') + 1);
-			config = runnerConfigMap.get(test);
-			if (config != null) {
-				return config;
-			}
-		}
-		// 检测去除TAG的情况
-		if (!all.contains("#$")) {
-			String test = all.substring(0, all.indexOf('#') + 1) + all.substring(all.lastIndexOf('$'), all.length());
 			config = runnerConfigMap.get(test);
 			if (config != null) {
 				return config;

@@ -169,7 +169,8 @@ public class TaskLogService {
             if (log.getFinishDate() != null && log.getRunDate() != null) {
                 metrics[9] += (log.getFinishDate().getTime() - log.getRunDate().getTime());
             }
-            TaskRunnerConfig runnerConfig = TaskMetaInfoManager.getTaskRunnerConfig(key);
+            // 如果没有单独配置带taskTag的任务配置,则fallback到默认配置
+            TaskRunnerConfig runnerConfig = TaskMetaInfoManager.getRunnerConfig(log.getTaskData());
             if (runnerConfig != null) {
                 int logType = runnerConfig.getLogType();
                 if (logType > TaskRunnerConfig.TASK_LOG_TYPE_NONE) {
