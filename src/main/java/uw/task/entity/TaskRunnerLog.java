@@ -3,8 +3,8 @@ package uw.task.entity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.httpclient.http.ObjectMapper;
 import uw.task.TaskData;
+import uw.task.util.TaskMessageConverter;
 
 import java.util.Date;
 
@@ -103,7 +103,7 @@ public class TaskRunnerLog {
                     logType == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_TASK_PARAM) {
                 String taskParam = null;
                 try {
-                    taskParam = ObjectMapper.DEFAULT_JSON_MAPPER.toString(value);
+                    taskParam = TaskMessageConverter.getTaskObjectMapper().writeValueAsString(value);
                 } catch (Exception e) {
                     logger.error(e.getMessage(), e);
                 }
@@ -185,7 +185,7 @@ public class TaskRunnerLog {
                     logType == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_RESULT_DATA) {
                 String resultData = null;
                 try {
-                    resultData = ObjectMapper.DEFAULT_JSON_MAPPER.toString(value);
+                    resultData = TaskMessageConverter.getTaskObjectMapper().writeValueAsString(value);
                 } catch (Exception e) {
                     logger.error(e.getMessage(), e);
                 }
