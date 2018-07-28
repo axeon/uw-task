@@ -3,6 +3,7 @@ package uw.task.entity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.log.es.vo.LogBaseVo;
 import uw.task.TaskData;
 import uw.task.util.TaskMessageConverter;
 
@@ -15,7 +16,7 @@ import java.util.Date;
  * @author axeon
  */
 @JsonIgnoreProperties({"logType","logLimitSize","taskData"})
-public class TaskRunnerLog {
+public class TaskRunnerLog extends LogBaseVo {
 
     private static final Logger logger = LoggerFactory.getLogger(TaskRunnerLog.class);
 

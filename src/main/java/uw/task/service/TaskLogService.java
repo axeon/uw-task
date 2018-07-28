@@ -212,33 +212,6 @@ public class TaskLogService {
     }
 
     /**
-     * 写日志Runner,解决submit 需要数据final的问题
-     *
-     * @param <T>
-     */
-    private static class LogRunner<T> implements Runnable {
-
-        private LogClient logClient;
-
-        private List<T> sourceList;
-
-        public LogRunner(final LogClient logClient, final List<T> sourceList) {
-            this.logClient = logClient;
-            this.sourceList = sourceList;
-        }
-
-        @Override
-        public void run() {
-            try {
-                logClient.bulkLog(sourceList);
-            } catch (Exception e) {
-                logger.error("TaskLogService.sendLogToServer日志发送到服务端异常: {}", e.getMessage());
-            }
-        }
-    }
-
-
-    /**
      * 统计信息。
      *
      * @author axeon

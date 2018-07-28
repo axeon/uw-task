@@ -1,6 +1,7 @@
 package uw.task.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import uw.log.es.vo.LogBaseVo;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -11,7 +12,7 @@ import java.util.Date;
  * @author axeon
  */
 @JsonIgnoreProperties({ "refObject","logType","logLimitSize"})
-public class TaskCronerLog implements Serializable {
+public class TaskCronerLog extends LogBaseVo implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
