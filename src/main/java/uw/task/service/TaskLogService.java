@@ -2,14 +2,12 @@ package uw.task.service;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.log.es.LogClient;
 import uw.task.TaskData;
 import uw.task.conf.TaskMetaInfoManager;
-import uw.task.conf.TaskProperties;
 import uw.task.entity.TaskCronerConfig;
 import uw.task.entity.TaskCronerLog;
 import uw.task.entity.TaskRunnerConfig;
@@ -19,14 +17,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * uw-task日志服务
@@ -59,11 +51,6 @@ public class TaskLogService {
     private List<TaskCronerLog> cronerLogList = Lists.newArrayList();
 
     /**
-     * 专门给日志发送使用的线程池。
-     */
-    private final ExecutorService executorService;
-
-    /**
      * 日志客户端
      */
     private final LogClient logClient;
@@ -73,16 +60,9 @@ public class TaskLogService {
      */
     private final TaskMetricsService taskMetricsService;
 
-    public TaskLogService(final LogClient logClient, final TaskMetricsService taskMetricsService,
-                          final TaskProperties taskProperties){
+    public TaskLogService(final LogClient logClient, final TaskMetricsService taskMetricsService) {
         this.logClient = logClient;
         this.taskMetricsService = taskMetricsService;
-        this.executorService = new ThreadPoolExecutor(taskProperties.getTaskLogMinThreadNum(),
-                taskProperties.getTaskLogMaxThreadNum(),
-                20L, TimeUnit.SECONDS,
-                new SynchronousQueue<>(),
-                new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskLog-%d").build(),
-                new ThreadPoolExecutor.CallerRunsPolicy());
     }
 
     /**
@@ -228,7 +208,7 @@ public class TaskLogService {
             }
         }
         // 写入日志服务器
-        executorService.submit(new LogRunner<TaskRunnerLog>(logClient,needWriteLog));
+        logClient.bulkLog(needWriteLog);
     }
 
     /**
@@ -397,6 +377,6 @@ public class TaskLogService {
             }
         }
         // 写入日志服务器
-        executorService.submit(new LogRunner<TaskCronerLog>(logClient,needWriteLog));
+        logClient.bulkLog(needWriteLog);
     }
 }

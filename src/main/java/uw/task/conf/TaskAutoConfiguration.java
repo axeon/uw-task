@@ -128,7 +128,7 @@ public class TaskAutoConfiguration {
         logClient.regLogObject(TaskRunnerLog.class);
         StringRedisTemplate redisTemplate = new StringRedisTemplate(taskRedisConnectionFactory);
         TaskMetricsService taskMetricsService = new TaskMetricsService(redisTemplate);
-        taskLogService = new TaskLogService(logClient,taskMetricsService,taskProperties);
+        taskLogService = new TaskLogService(logClient,taskMetricsService);
         // taskAPI
         TaskAPI taskAPI = new TaskAPI(taskProperties, restTemplate,taskLogService);
         // rabbit模板

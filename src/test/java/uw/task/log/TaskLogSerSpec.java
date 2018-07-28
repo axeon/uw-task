@@ -1,7 +1,6 @@
 package uw.task.log;
 
 import org.junit.Test;
-import uw.httpclient.http.ObjectMapper;
 import uw.task.TaskData;
 import uw.task.entity.TaskRunnerLog;
 
@@ -18,6 +17,5 @@ public class TaskLogSerSpec {
         taskData.setResultData("hello");
 
         TaskRunnerLog log = new TaskRunnerLog(taskData);
-        System.out.println(ObjectMapper.DEFAULT_JSON_MAPPER.toString(log));
     }
 }
