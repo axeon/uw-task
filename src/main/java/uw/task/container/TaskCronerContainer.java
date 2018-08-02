@@ -192,7 +192,7 @@ public class TaskCronerContainer {
                     // 写入下次计划执行日期。
                     taskCronerLog.setNextDate(nextExec);
                     // 入库
-                    taskAPI.sendTaskCronerLog(taskCronerLog);
+                    taskAPI.sendTaskCronerLog(config.getId(),taskCronerLog);
                 }
             }
             return nextExec;

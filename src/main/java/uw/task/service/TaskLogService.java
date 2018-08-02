@@ -212,18 +212,6 @@ public class TaskLogService {
     }
 
     /**
-     * 统计信息。
-     *
-     * @author axeon
-     *
-     */
-    static class CronerStatsInfo {
-        long[] metrics = new long[8];
-
-        Date nextRunDate = null;
-    }
-
-    /**
      * 定期批量写CronerLog数据到日志服务器
      */
     public void sendCronerLogToServer() {
@@ -242,34 +230,33 @@ public class TaskLogService {
             return;
         }
         List<TaskCronerLog> needWriteLog = Lists.newArrayList();
-        HashMap<String, CronerStatsInfo> statsMap = Maps.newHashMap();
+        HashMap<String, long[]> statsMap = Maps.newHashMap();
         for (TaskCronerLog log : cronerLogData) {
             // numAll,numFail,numFailProgram,numFailPartner,numFailData,timeAll,timeWait,timeRun
             String key = TaskMetaInfoManager.getCronerLogKey(log);
-            CronerStatsInfo statsInfo = statsMap.computeIfAbsent(key, pk -> new CronerStatsInfo());
-            statsInfo.metrics[0] += 1;
+            long[] metrics  = statsMap.computeIfAbsent(key, pk -> new long[8]);
+            metrics[0] += 1;
             if (log.getState() > 1) {
                 if (log.getState() == 2) {
-                    statsInfo.metrics[2] += 1;
-                    statsInfo.metrics[1] += 1;
+                    metrics[2] += 1;
+                    metrics[1] += 1;
                 } else if (log.getState() == 4) {
-                    statsInfo.metrics[3] += 1;
-                    statsInfo.metrics[1] += 1;
+                    metrics[3] += 1;
+                    metrics[1] += 1;
                 } else if (log.getState() == 5) {
-                    statsInfo.metrics[4] += 1;
-                    statsInfo.metrics[1] += 1;
+                    metrics[4] += 1;
+                    metrics[1] += 1;
                 }
             }
             if (log.getFinishDate() != null && log.getScheduleDate() != null) {
-                statsInfo.metrics[5] += (log.getFinishDate().getTime() - log.getScheduleDate().getTime());
+                metrics[5] += (log.getFinishDate().getTime() - log.getScheduleDate().getTime());
             }
             if (log.getRunDate() != null && log.getScheduleDate() != null) {
-                statsInfo.metrics[6] += (log.getRunDate().getTime() - log.getScheduleDate().getTime());
+                metrics[6] += (log.getRunDate().getTime() - log.getScheduleDate().getTime());
             }
             if (log.getFinishDate() != null && log.getRunDate() != null) {
-                statsInfo.metrics[7] += (log.getFinishDate().getTime() - log.getRunDate().getTime());
+                metrics[7] += (log.getFinishDate().getTime() - log.getRunDate().getTime());
             }
-            statsInfo.nextRunDate = log.getNextDate();
             int logType = log.getLogType();
             int logLimitSize = log.getLogLimitSize();
             if (logType > TaskCronerConfig.TASK_LOG_TYPE_NONE) {
@@ -313,40 +300,40 @@ public class TaskLogService {
             }
         }
         // 更新metrics数据。
-        for (Map.Entry<String, CronerStatsInfo> kv : statsMap.entrySet()) {
-            CronerStatsInfo statsInfo = kv.getValue();
+        for (Map.Entry<String, long[]> kv : statsMap.entrySet()) {
+            long[] metrics = kv.getValue();
             // 更新metric统计信息
-            if (statsInfo.metrics[0] > 0) {
+            if (metrics[0] > 0) {
                 // 执行的总数量+1
-                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + "." + "numAll", statsInfo.metrics[0]);
+                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + "." + "numAll", metrics[0]);
             }
-            if (statsInfo.metrics[1] > 0) {
+            if (metrics[1] > 0) {
                 // 失败的总数量+1
-                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + "." + "numFail", statsInfo.metrics[1]);
+                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + "." + "numFail", metrics[1]);
             }
-            if (statsInfo.metrics[2] > 0) {
+            if (metrics[2] > 0) {
                 // 程序失败的总数量+1
-                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + "." + "numFailProgram", statsInfo.metrics[2]);
+                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + "." + "numFailProgram", metrics[2]);
             }
-            if (statsInfo.metrics[3] > 0) {
+            if (metrics[3] > 0) {
                 // 接口失败的总数量+1
-                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + "." + "numFailPartner", statsInfo.metrics[3]);
+                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + "." + "numFailPartner", metrics[3]);
             }
-            if (statsInfo.metrics[4] > 0) {
+            if (metrics[4] > 0) {
                 // 数据失败的总数量+1
-                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + "." + "numFailData", statsInfo.metrics[4]);
+                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + "." + "numFailData", metrics[4]);
             }
-            if (statsInfo.metrics[5] > 0) {
+            if (metrics[5] > 0) {
                 // 总消耗时间
-                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + "." + "timeAll", statsInfo.metrics[5]);
+                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + "." + "timeAll", metrics[5]);
             }
-            if (statsInfo.metrics[6] > 0) {
+            if (metrics[6] > 0) {
                 // 队列传输时间
-                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + "." + "timeWait", statsInfo.metrics[6]);
+                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + "." + "timeWait", metrics[6]);
             }
-            if (statsInfo.metrics[7] > 0) {
+            if (metrics[7] > 0) {
                 // 执行时间
-                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + "." + "timeRun", statsInfo.metrics[7]);
+                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + "." + "timeRun", metrics[7]);
             }
         }
         // 写入日志服务器

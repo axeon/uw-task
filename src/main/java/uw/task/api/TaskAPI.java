@@ -222,11 +222,20 @@ public class TaskAPI {
     }
 
     /**
-     * 发送CronLog日志。
+     * 发送CronLog日志
      *
-     * @param taskCronerLog
+     * @param configId      配置Id,方便更新下一次执行时间
+     * @param taskCronerLog 日志对象
      */
-    public void sendTaskCronerLog(TaskCronerLog taskCronerLog) {
+    public void sendTaskCronerLog(long configId,TaskCronerLog taskCronerLog) {
+        try {
+            restTemplate.getForObject(
+                    taskProperties.getServerHost()
+                            + "/taskapi/croner/tick?id={id}&nextDate={nextDate}",
+                    Integer.class, configId, taskCronerLog.getNextDate().getTime());
+        } catch (Exception e) {
+            log.error("TaskAPI.cornerTick()服务端主机状态更新异常: " + e.getMessage(), e);
+        }
         taskLogService.writeCronerLog(taskCronerLog);
     }
 }
