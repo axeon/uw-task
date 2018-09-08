@@ -6,12 +6,11 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.support.converter.AbstractJsonMessageConverter;
-import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConversionException;
 import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.core.ParameterizedTypeReference;
@@ -38,7 +37,7 @@ public class TaskMessageConverter extends AbstractJsonMessageConverter implement
      * 数据类型
      */
     public static final String CONTENT_TYPE_TASK_CLASS = "TASK_CLASS";
-    private static Log log = LogFactory.getLog(TaskMessageConverter.class);
+    private static Logger log = LoggerFactory.getLogger(TaskMessageConverter.class);
     /**
      * 泛型类型缓存
      */
@@ -220,7 +219,13 @@ public class TaskMessageConverter extends AbstractJsonMessageConverter implement
             }
         } else {
             if (log.isWarnEnabled()) {
-                log.warn("Could not convert incoming message with content-type [" + contentType + "]");
+                try {
+                    log.warn("Could not convert incoming message with content-type [{}],message: {} ",
+                            contentType,new String(message.getBody(),"UTF-8"));
+                } catch (Exception e) {
+                    log.warn("Could not convert incoming message with content-type [{}],message cannot be decode. ",
+                            contentType);
+                }
             }
         }
         return content;
