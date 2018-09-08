@@ -183,7 +183,13 @@ public class TaskMessageConverter extends AbstractJsonMessageConverter implement
             }
         } else {
             if (log.isWarnEnabled()) {
-                log.warn("Could not convert incoming message with content-type [" + contentType + "]");
+                try {
+                    log.warn("Could not convert incoming message with content-type [{}],message: {} ",
+                            contentType,new String(message.getBody(),"UTF-8"));
+                } catch (Exception e) {
+                    log.warn("Could not convert incoming message with content-type [{}],message cannot be decode. ",
+                            contentType);
+                }
             }
         }
 
