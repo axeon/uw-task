@@ -38,7 +38,7 @@ public class TaskMessageConverter extends AbstractJsonMessageConverter implement
      * 数据类型
      */
     public static final String CONTENT_TYPE_TASK_CLASS = "TASK_CLASS";
-    private static Log log = LogFactory.getLog(Jackson2JsonMessageConverter.class);
+    private static Log log = LogFactory.getLog(TaskMessageConverter.class);
     /**
      * 泛型类型缓存
      */
