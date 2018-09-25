@@ -44,7 +44,7 @@ public class GlobalSequenceManager {
 		try {
 			RedisSequence sequence = map.get(name);
 			if (sequence == null) {
-				initSequence(name, 100);
+				initSequence(name, 10000);
 				sequence = map.get(name);
 			}
 			if (sequence != null) {
