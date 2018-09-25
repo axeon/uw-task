@@ -41,13 +41,6 @@ public class TaskRunnerLog extends LogBaseVo {
     }
 
     /**
-     * @return the id
-     */
-    public long getId() {
-        return taskData.getId();
-    }
-
-    /**
      * @return the refId
      */
     public long getRefId() {

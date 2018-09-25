@@ -16,8 +16,6 @@ public class TaskCronerLog extends LogBaseVo implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-	private long id;
-
     /**
      * 关联ID
      */
@@ -106,14 +104,6 @@ public class TaskCronerLog extends LogBaseVo implements Serializable {
     public TaskCronerLog(int logType, int logLimitSize) {
         this.logType = logType;
         this.logLimitSize = logLimitSize;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
     }
 
     public long getRefId() {

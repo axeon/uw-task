@@ -126,7 +126,6 @@ public class TaskCronerContainer {
                     return;
                 }
                 // 任务逻辑
-                taskCronerLog.setId(sequence.nextId("task_croner_log"));
                 taskCronerLog.setTaskClass(config.getTaskClass());
                 taskCronerLog.setTaskParam(config.getTaskParam());
                 taskCronerLog.setTaskCron(config.getTaskCron());
@@ -184,7 +183,7 @@ public class TaskCronerContainer {
                         trigger.getExpression(), nextExec.toString());
             }
             // 在此处写入本次执行的信息
-            if (taskCronerLog != null && taskCronerLog.getId() > 0) {
+            if (taskCronerLog != null) {
                 if (triggerContext.lastScheduledExecutionTime() != null
                         && triggerContext.lastActualExecutionTime() != null
                         && triggerContext.lastCompletionTime() != null) {
