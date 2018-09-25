@@ -87,6 +87,7 @@ public class TaskScheduler {
      * @return
      */
     public Message buildTaskQueueMessage(final TaskData taskData) {
+        taskData.setId(globalSequenceManager.nextId("task_runner_log"));
         taskData.setQueueDate(new Date());
         taskData.setRunType(TaskData.RUN_TYPE_GLOBAL);
         Message msg = rabbitTemplate.getMessageConverter().toMessage(taskData, new MessageProperties());
@@ -115,6 +116,7 @@ public class TaskScheduler {
      */
     public <TP, RD> TaskData<TP, RD> runTask(final TaskData<TP, RD> taskData,
                                              final TypeReference<TaskData<TP, RD>> typeRef) {
+        taskData.setId(globalSequenceManager.nextId("task_runner_log"));
         taskData.setQueueDate(new Date());
         // 当自动RPC，并且本地有runner，而且target匹配的时候，运行在本地模式下。
         if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && TaskMetaInfoManager.checkRunnerRunLocal(taskData)) {
@@ -162,6 +164,7 @@ public class TaskScheduler {
      */
     public <TP, RD> Future<TaskData<TP, RD>> runTaskAsync(final TaskData<TP, RD> taskData,
                                                           final TypeReference<TaskData<TP, RD>> typeRef) {
+        taskData.setId(globalSequenceManager.nextId("task_runner_log"));
         taskData.setQueueDate(new Date());
 
         // 当自动RPC，并且本地有runner，而且target匹配的时候，运行在本地模式下。

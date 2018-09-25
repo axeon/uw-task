@@ -69,6 +69,11 @@ public class TaskData<TP, RD> implements Serializable {
     public static final int RUN_TYPE_AUTO_RPC = 6;
     
     /**
+     * id，此序列值由框架自动生成，无需手工设置。
+     */
+    private long id;
+    
+    /**
      * 关联TAG，由调用方设定，用于第三方统计信息。
      */
     private String refTag;
@@ -173,6 +178,20 @@ public class TaskData<TP, RD> implements Serializable {
      * 执行状态，此信息由框架根据异常自动设置。
      */
     private int state;
+
+    /**
+     * @return the id
+     */
+    public long getId() {
+        return id;
+    }
+
+    /**
+     * @param id the id to set
+     */
+    public void setId(long id) {
+        this.id = id;
+    }
 
     /**
      * @return the refId
