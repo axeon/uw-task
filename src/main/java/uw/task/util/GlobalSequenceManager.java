@@ -19,6 +19,16 @@ public class GlobalSequenceManager {
 
 	private static final String REDIS_TAG = "_SEQUENCE_";
 
+    /**
+     * 重试次数。
+     */
+    private static final int MAX_RETRY_TIMES = 3;
+
+    /**
+     * 序列递增步长值
+     */
+    private static final int SEQUENCE_INCREMENT_NUM = 10000;
+
 	/**
 	 * redis定制连接工厂
 	 */
@@ -40,53 +50,21 @@ public class GlobalSequenceManager {
 	 * @return
 	 */
 	public long nextId(String name) {
-		long seqId = -1;
-		try {
-			RedisSequence sequence = map.get(name);
-			if (sequence == null) {
-				initSequence(name, 10000);
-				sequence = map.get(name);
-			}
-			if (sequence != null) {
-				seqId = sequence.nextId();
-			}
-		} catch (Exception e) {
-			log.error(e.getMessage(), e);
-		}
-
-		return seqId;
-	}
-
-	/**
-	 * 初始化一个序列发生器
-	 *
-	 * @param name
-	 *            名称
-	 * @param incrementNum
-	 *            每次递增的数量
-	 * @return
-	 */
-	public synchronized boolean initSequence(String name, int incrementNum) {
-		boolean flag = false;
-		try {
-			RedisSequence seq = map.get(name);
-			if (seq == null) {
-				synchronized (map) {
-					seq = new RedisSequence(name, incrementNum);
-					map.putIfAbsent(name, seq);
-				}
-				flag = true;
-			} else {
-				if (seq.getIncrementNum() != incrementNum) {
-					seq.setIncrementNum(incrementNum);
-				}
-				flag = false;
-			}
-		} catch (Exception e) {
-			log.error(e.getMessage(), e);
-		}
-		return flag;
-	}
+	    int tryCount = 0;
+	    do {
+            try {
+                RedisSequence redisSequence = map.get(name);
+                if (redisSequence == null) {
+                    redisSequence = map.computeIfAbsent(name, key -> new RedisSequence(key, SEQUENCE_INCREMENT_NUM));
+                }
+                return redisSequence.nextId();
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+                tryCount++;
+            }
+        } while (tryCount < MAX_RETRY_TIMES);
+        return -1;
+    }
 
 	/**
 	 * redis序列发生器。
@@ -96,14 +74,9 @@ public class GlobalSequenceManager {
 	class RedisSequence {
 
 		/**
-		 * 序列名称
-		 */
-		private String name;
-
-		/**
 		 * 当前数值
 		 */
-		private AtomicLong currentId = new AtomicLong(0);
+		private AtomicLong currentId;
 
 		/**
 		 * 当前可以获取的最大id
@@ -121,36 +94,6 @@ public class GlobalSequenceManager {
 		private RedisAtomicLong counter;
 
 		/**
-		 * @return the name
-		 */
-		public String getName() {
-			return name;
-		}
-
-		/**
-		 * @param name
-		 *            the name to set
-		 */
-		public void setName(String name) {
-			this.name = name;
-		}
-
-		/**
-		 * @return the incrementNum
-		 */
-		public int getIncrementNum() {
-			return incrementNum;
-		}
-
-		/**
-		 * @param incrementNum
-		 *            the incrementNum to set
-		 */
-		public void setIncrementNum(int incrementNum) {
-			this.incrementNum = incrementNum;
-		}
-
-		/**
 		 * 初始化一个序列器
 		 *
 		 * @param name
@@ -158,12 +101,10 @@ public class GlobalSequenceManager {
 		 * @param incrementNum
 		 *            增长数
 		 */
-		public RedisSequence(String name, int incrementNum) {
-			super();
-			this.name = name;
+		private RedisSequence(String name, int incrementNum) {
 			this.incrementNum = incrementNum;
 			counter = new RedisAtomicLong(REDIS_TAG + name, redisConnectionFactory);
-			currentId.set(counter.getAndAdd(incrementNum));
+            currentId = new AtomicLong((counter.getAndAdd(incrementNum)));
 			maxId = currentId.get() + incrementNum;
 		}
 
@@ -180,7 +121,5 @@ public class GlobalSequenceManager {
 			}
 			return value;
 		}
-
 	}
-
 }
