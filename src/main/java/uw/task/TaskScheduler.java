@@ -70,29 +70,81 @@ public class TaskScheduler {
     }
 
     /**
-     * 把任务发送到队列中
-     *
-     * @param message 任务消息
-     */
-    public void sendToQueue(final Message message) {
-        String queue = message.getMessageProperties().getConsumerQueue();
-        rabbitTemplate.convertAndSend(queue, queue, message);
-    }
-
-
-    /**
      * 构造Task消息对象，此方法用于提前构造TaskData。
      *
      * @param taskData
      * @return
      */
-    public Message buildTaskQueueMessage(final TaskData taskData) {
+    private Message buildTaskQueueMessage(final TaskData taskData) {
         taskData.setId(globalSequenceManager.nextId("task_runner_log"));
         taskData.setQueueDate(new Date());
         taskData.setRunType(TaskData.RUN_TYPE_GLOBAL);
         Message msg = rabbitTemplate.getMessageConverter().toMessage(taskData, new MessageProperties());
         msg.getMessageProperties().setConsumerQueue(TaskMetaInfoManager.getFitQueue(taskData));
         return msg;
+    }
+
+    /**
+     * 把任务发送到队列中进行自动重试
+     *
+     * @param taskData 任务数据
+     */
+    public void sendToQueueAutoRetry(final TaskData<?, ?> taskData) {
+        Message message = buildRetryTaskQueueMessage(taskData);
+        String queue = message.getMessageProperties().getConsumerQueue();
+        rabbitTemplate.send(queue, queue, message);
+    }
+
+    /**
+     * 构造用于重试的Task消息对象
+     *
+     * @param taskData
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    private Message buildRetryTaskQueueMessage(final TaskData taskData) {
+        // process方法set了啥,除ranTimes、taskClass、taskParam外,都应该还原
+        Date oriConsumeDate = taskData.getConsumeDate();
+        String oriHostIp = taskData.getHostIp();
+        String oriHostId = taskData.getHostId();
+
+        taskData.setConsumeDate(null);
+        taskData.setHostIp(null);
+        taskData.setHostId(null);
+
+        Date oriRunDate = taskData.getRunDate();
+        Object oriResultData = taskData.getResultData();
+        int oriState = taskData.getState();
+        String oriErrorInfo = taskData.getErrorInfo();
+
+        taskData.setRunDate(null);
+        taskData.setResultData(null);
+        taskData.setState(TaskData.STATUS_UNKNOW);
+        taskData.setErrorInfo(null);
+
+        // 会被buildTaskQueueMessage所覆盖的值
+        long oriTaskId = taskData.getId();
+        Date oriQueueDate = taskData.getQueueDate();
+        int oriRunType = taskData.getRunType();
+
+        // 构建队列消息
+        Message message = buildTaskQueueMessage(taskData);
+
+        // 数据还原
+        taskData.setConsumeDate(oriConsumeDate);
+        taskData.setHostIp(oriHostIp);
+        taskData.setHostId(oriHostId);
+
+        taskData.setRunDate(oriRunDate);
+        taskData.setResultData(oriResultData);
+        taskData.setState(oriState);
+        taskData.setErrorInfo(oriErrorInfo);
+
+        taskData.setId(oriTaskId);
+        taskData.setQueueDate(oriQueueDate);
+        taskData.setRunType(oriRunType);
+
+        return message;
     }
 
 
@@ -114,6 +166,7 @@ public class TaskScheduler {
      * @param taskData 任务数据
      * @return
      */
+    @SuppressWarnings("unchecked")
     public <TP, RD> TaskData<TP, RD> runTask(final TaskData<TP, RD> taskData,
                                              final TypeReference<TaskData<TP, RD>> typeRef) {
         taskData.setId(globalSequenceManager.nextId("task_runner_log"));
@@ -162,6 +215,7 @@ public class TaskScheduler {
      * @param taskData 任务数据
      * @return
      */
+    @SuppressWarnings("unchecked")
     public <TP, RD> Future<TaskData<TP, RD>> runTaskAsync(final TaskData<TP, RD> taskData,
                                                           final TypeReference<TaskData<TP, RD>> typeRef) {
         taskData.setId(globalSequenceManager.nextId("task_runner_log"));
@@ -172,11 +226,10 @@ public class TaskScheduler {
             // 启动本地运行模式。
             taskData.setRunType(TaskData.RUN_TYPE_LOCAL);
             // 启动本地运行模式。
-            Future<TaskData<TP, RD>> future = taskRpcService.submit(() -> {
+            return taskRpcService.submit(() -> {
                 taskRunnerContainer.process(taskData);
                 return taskData;
             });
-            return future;
         } else {
             // 全局运行模式
            taskData.setRunType(TaskData.RUN_TYPE_GLOBAL_RPC);
@@ -187,8 +240,7 @@ public class TaskScheduler {
             mp.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
             mp.setExpiration("180000");
             String queue = TaskMetaInfoManager.getFitQueue(taskData);
-            Future<TaskData<TP, RD>> future = taskRpcService.submit(() -> {
-                @SuppressWarnings("unchecked")
+            return taskRpcService.submit(() -> {
                 Message retMessage = rabbitTemplate.sendAndReceive(queue, queue, message);
                 if (typeRef == null) {
                     return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage(retMessage);
@@ -196,7 +248,6 @@ public class TaskScheduler {
                     return TaskMessageConverter.constructTaskData(retMessage, typeRef);
                 }
             });
-            return future;
         }
     }
 }

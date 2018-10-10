@@ -67,6 +67,16 @@ public class TaskData<TP, RD> implements Serializable {
      * 运行模式：自动运行RPC返回结果，使用此模式，会自动选择本地还远程运行模式。
      */
     public static final int RUN_TYPE_AUTO_RPC = 6;
+
+    /**
+     * 自动重试[为了兼容,默认开启重试]
+     */
+    public static final int RETRY_TYPE_AUTO = 0;
+
+    /**
+     * 用户手工重试
+     */
+    public static final int RETRY_TYPE_MANUAL = 1;
     
     /**
      * id，此序列值由框架自动生成，无需手工设置。
@@ -123,6 +133,11 @@ public class TaskData<TP, RD> implements Serializable {
      * 任务运行类型，默认为自动RPC，根据情况选择本地还是远程运行。
      */
     private int runType = RUN_TYPE_AUTO_RPC;
+
+    /**
+     * 重试类型
+     */
+    private int retryType;
 
     /**
      * 指定运行目标。
@@ -325,6 +340,14 @@ public class TaskData<TP, RD> implements Serializable {
      */
     public void setRunType(int runType) {
         this.runType = runType;
+    }
+
+    public int getRetryType() {
+        return retryType;
+    }
+
+    public void setRetryType(int retryType) {
+        this.retryType = retryType;
     }
 
     /**

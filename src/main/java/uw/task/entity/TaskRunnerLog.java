@@ -128,6 +128,13 @@ public class TaskRunnerLog extends LogBaseVo {
     }
 
     /**
+     * @return the retryType
+     */
+    public int getRetryType() {
+        return taskData.getRetryType();
+    }
+
+    /**
      * @return the runTarget
      */
     public String getRunTarget() {

@@ -90,7 +90,7 @@ public class TaskRunnerContainer {
 	 * @param taskData
 	 * @return
 	 */
-	@SuppressWarnings("rawtypes")
+	@SuppressWarnings("unchecked")
 	public TaskData process(TaskData taskData) {
 		// 设置开始消费时间
 		taskData.setConsumeDate(new Date());
@@ -106,29 +106,28 @@ public class TaskRunnerContainer {
 		taskData.setRanTimes(taskData.getRanTimes() + 1);
 
 		// 限制标记，0时说明无限制
-		long nolimitFlag = 0;
+		long noLimitFlag = 0;
 		// 对于RPC调用来说，根本就不受任何流控限制。
 		if (taskData.getRunType() != TaskData.RUN_TYPE_GLOBAL_RPC) {
-
-			if (taskConfig != null && taskConfig.getRateLimitType() != TaskRunnerConfig.RATE_LIMIT_TYPE_NONE) {
+			if (taskConfig.getRateLimitType() != TaskRunnerConfig.RATE_LIMIT_TYPE_NONE) {
 				if (taskConfig.getRateLimitType() == TaskRunnerConfig.RATE_LIMIT_TYPE_PROCESS) {
 					// 进程内限制
 					localRateLimiter.initLimiter("", taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime());
 					boolean flag = localRateLimiter.tryAcquire("", taskConfig.getRateLimitWait(), TimeUnit.SECONDS);
-					nolimitFlag = flag ? 0 : -1;
+                    noLimitFlag = flag ? 0 : -1;
 				} else if (taskConfig.getRateLimitType() == TaskRunnerConfig.RATE_LIMIT_TYPE_TASK_PROCESS) {
 					// 进程内+任务名限制
 					localRateLimiter.initLimiter(taskData.getTaskClass(), taskConfig.getRateLimitValue(),
 							taskConfig.getRateLimitTime());
 					boolean flag = localRateLimiter.tryAcquire(taskData.getTaskClass(), taskConfig.getRateLimitWait(),
 							TimeUnit.SECONDS);
-					nolimitFlag = flag ? 0 : -1;
+                    noLimitFlag = flag ? 0 : -1;
 				} else if (taskConfig.getRateLimitType() == TaskRunnerConfig.RATE_LIMIT_TYPE_TAG_PROCESS) {
 					// 进程内+任务名限制
 					String locker = taskData.getTaskClass() + "$" + String.valueOf(taskData.getRateLimitTag());
 					localRateLimiter.initLimiter(locker, taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime());
 					boolean flag = localRateLimiter.tryAcquire(locker, taskConfig.getRateLimitWait(), TimeUnit.SECONDS);
-					nolimitFlag = flag ? 0 : -1;
+                    noLimitFlag = flag ? 0 : -1;
 				} else {
 					String locker = taskData.getTaskClass();
 					switch (taskConfig.getRateLimitType()) {
@@ -158,12 +157,12 @@ public class TaskRunnerContainer {
 					// 开始进行延时等待
 					long end = System.currentTimeMillis() + taskConfig.getRateLimitWait() * 1000;
 					while (System.currentTimeMillis() <= end) {
-						nolimitFlag = globalRateLimiter.tryAcquire(locker);
-						if (nolimitFlag == 0) {
+                        noLimitFlag = globalRateLimiter.tryAcquire(locker);
+						if (noLimitFlag == 0) {
 							break;
 						}
 						try {
-							Thread.sleep(nolimitFlag);
+							Thread.sleep(noLimitFlag);
 						} catch (InterruptedException e) {
 							log.error(e.getMessage(), e);
 						}
@@ -189,7 +188,7 @@ public class TaskRunnerContainer {
 		taskData.setRunDate(new Date());
 
 		// 如果允许，则开始执行。
-		if (nolimitFlag == 0) {
+		if (noLimitFlag == 0) {
 			ArrayList<RunnerTaskListener> runnerListenerList = taskListenerManager.getRunnerListenerList();
 			try {
 				// 执行任务
@@ -228,17 +227,19 @@ public class TaskRunnerContainer {
 			taskData.setState(TaskData.STATUS_FAIL_CONFIG);
 		}
 		// 如果异常，根据任务设置，重新跑
-		if (taskData.getState() > TaskData.STATUS_SUCCESS) {
-			if (taskData.getState() == TaskData.STATUS_FAIL_CONFIG) {
-				if (taskData.getRanTimes() < taskConfig.getRetryTimesByOverrated()) {
-					taskScheduler.sendToQueue(taskData);
-				}
-			} else if (taskData.getState() == TaskData.STATUS_FAIL_PARTNER) {
-				if (taskData.getRanTimes() < taskConfig.getRetryTimesByPartner()) {
-					taskScheduler.sendToQueue(taskData);
-				}
-			}
-		}
+        if(taskData.getRetryType() == TaskData.RETRY_TYPE_AUTO) {
+            if (taskData.getState() > TaskData.STATUS_SUCCESS) {
+                if (taskData.getState() == TaskData.STATUS_FAIL_CONFIG) {
+                    if (taskData.getRanTimes() < taskConfig.getRetryTimesByOverrated()) {
+                        taskScheduler.sendToQueueAutoRetry(taskData);
+                    }
+                } else if (taskData.getState() == TaskData.STATUS_FAIL_PARTNER) {
+                    if (taskData.getRanTimes() < taskConfig.getRetryTimesByPartner()) {
+                        taskScheduler.sendToQueueAutoRetry(taskData);
+                    }
+                }
+            }
+        }
 		// 不管如何，都给设定结束日期。
 		taskData.setFinishDate(new Date());
 		// 保存日志与统计信息

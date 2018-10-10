@@ -54,16 +54,6 @@ public class TaskMetaInfoManager {
 		return runnerMap.get(taskClass);
 	}
 
-    /**
-     * 获得队列任务配置
-     *
-     * @param configKey
-     * @return
-     */
-	public static TaskRunnerConfig getTaskRunnerConfig(String configKey) {
-        return runnerConfigMap.get(configKey);
-    }
-
 	/**
 	 * 检查一个runner是否可以在本地运行。
 	 * 
@@ -171,8 +161,7 @@ public class TaskMetaInfoManager {
 				return config;
 			}
 		}
-		// 匹配不上了。。。
-		return null;
+		throw new RuntimeException("找不到任务配置: taskClass = " + data.getTaskClass());
 	}
 
 	/**
