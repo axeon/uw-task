@@ -1,4 +1,9 @@
 [TOC]
+# uw-task V2.6.0 版本升级
+1. 升级 spring-boot 至 2.0.5.RELEASE
+2. 解决sendToQueue重试数据覆盖问题
+3. TaskData添加retryType类型, 防止以runTask运行却发生了重试
+
 # uw-task V2.1.2版本升级
 1.增加数据错误类型TaskDataException，如果出现数据错误，则抛出此类异常。
 2.去除了报文压缩，降低cpu占用率。升级后务必清除队列，并保证版本一致，否则可能会无法运行。
