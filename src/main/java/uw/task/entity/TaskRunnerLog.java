@@ -75,7 +75,6 @@ public class TaskRunnerLog extends LogBaseVo {
         return taskData.getRateLimitTag();
     }
 
-
     /**
      * @return the taskClass
      */
@@ -99,8 +98,15 @@ public class TaskRunnerLog extends LogBaseVo {
      */
     public String getTaskParam() {
         Object value = taskData.getTaskParam();
-        if(value != null) {
-            if (logType == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_ALL ||
+        if (value != null) {
+            // 报错了
+            if (taskData.getErrorInfo() != null) {
+                try {
+                    return TaskMessageConverter.getTaskObjectMapper().writeValueAsString(value);
+                } catch (Exception e) {
+                    logger.error(e.getMessage(), e);
+                }
+            } else if (logType == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_ALL ||
                     logType == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_TASK_PARAM) {
                 String taskParam = null;
                 try {
@@ -189,7 +195,14 @@ public class TaskRunnerLog extends LogBaseVo {
     public String getResultData() {
         Object value = taskData.getResultData();
         if (value != null) {
-            if (logType == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_ALL ||
+            // 报错了
+            if (taskData.getErrorInfo() != null) {
+                try {
+                    return TaskMessageConverter.getTaskObjectMapper().writeValueAsString(value);
+                } catch (Exception e) {
+                    logger.error(e.getMessage(), e);
+                }
+            } else if (logType == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_ALL ||
                     logType == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_RESULT_DATA) {
                 String resultData = null;
                 try {

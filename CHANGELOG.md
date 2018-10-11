@@ -1,4 +1,7 @@
 [TOC]
+# uw-task V2.6.1 版本升级
+1. 修改队列任务日志记录模式,当发生错误时,总会记录全部日志
+
 # uw-task V2.6.0 版本升级
 1. 升级 spring-boot 至 2.0.5.RELEASE
 2. 解决sendToQueue重试数据覆盖问题

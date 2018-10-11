@@ -72,7 +72,6 @@ public class TaskRunnerContainer {
 	 */
 	public TaskRunnerContainer(TaskProperties taskProperties, TaskAPI taskAPI, LocalRateLimiter localRateLimiter,
 			GlobalRateLimiter globalRateLimiter, TaskListenerManager taskListenerManager) {
-		super();
 		this.taskProperties = taskProperties;
 		this.taskAPI = taskAPI;
 		this.localRateLimiter = localRateLimiter;
@@ -231,11 +230,11 @@ public class TaskRunnerContainer {
             if (taskData.getState() > TaskData.STATUS_SUCCESS) {
                 if (taskData.getState() == TaskData.STATUS_FAIL_CONFIG) {
                     if (taskData.getRanTimes() < taskConfig.getRetryTimesByOverrated()) {
-                        taskScheduler.sendToQueueAutoRetry(taskData);
+                        taskScheduler.sendToQueueRetry(taskData);
                     }
                 } else if (taskData.getState() == TaskData.STATUS_FAIL_PARTNER) {
                     if (taskData.getRanTimes() < taskConfig.getRetryTimesByPartner()) {
-                        taskScheduler.sendToQueueAutoRetry(taskData);
+                        taskScheduler.sendToQueueRetry(taskData);
                     }
                 }
             }

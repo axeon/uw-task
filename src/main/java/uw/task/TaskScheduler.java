@@ -89,7 +89,7 @@ public class TaskScheduler {
      *
      * @param taskData 任务数据
      */
-    public void sendToQueueAutoRetry(final TaskData<?, ?> taskData) {
+    public void sendToQueueRetry(final TaskData<?, ?> taskData) {
         Message message = buildRetryTaskQueueMessage(taskData);
         String queue = message.getMessageProperties().getConsumerQueue();
         rabbitTemplate.send(queue, queue, message);
