@@ -1,7 +1,5 @@
 package uw.task.conf;
 
-import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
-import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.UUID;
@@ -52,6 +50,16 @@ public class TaskProperties {
      * RPC最大线程数,用于执行RPC调用，超过此线程数，将会导致阻塞。
      */
     private int taskRpcMaxThreadNum = 200;
+
+    /**
+     * 队列任务重试延时毫秒数。
+     */
+    private long taskQueueRetryDelay = 1000;
+
+    /**
+     *  rpc任务重试延时毫秒数。
+     */
+    private long taskRpcRetryDelay = 50;
 
     /**
      * 运行主机ID
@@ -205,5 +213,21 @@ public class TaskProperties {
 
     public void setRabbitmq(RabbitProperties rabbitmq) {
         this.rabbitmq = rabbitmq;
+    }
+
+    public long getTaskQueueRetryDelay() {
+        return taskQueueRetryDelay;
+    }
+
+    public void setTaskQueueRetryDelay(long taskQueueRetryDelay) {
+        this.taskQueueRetryDelay = taskQueueRetryDelay;
+    }
+
+    public long getTaskRpcRetryDelay() {
+        return taskRpcRetryDelay;
+    }
+
+    public void setTaskRpcRetryDelay(long taskRpcRetryDelay) {
+        this.taskRpcRetryDelay = taskRpcRetryDelay;
     }
 }
