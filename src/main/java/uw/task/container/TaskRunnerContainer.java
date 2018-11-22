@@ -225,27 +225,43 @@ public class TaskRunnerContainer {
 					+ "s, Wait " + taskConfig.getRateLimitWait() + "s!");
 			taskData.setState(TaskData.STATUS_FAIL_CONFIG);
 		}
-		// 如果异常，根据任务设置，重新跑
-        if(taskData.getRetryType() == TaskData.RETRY_TYPE_AUTO) {
-            if (taskData.getState() > TaskData.STATUS_SUCCESS) {
-                if (taskData.getState() == TaskData.STATUS_FAIL_CONFIG) {
-                    if (taskData.getRanTimes() < taskConfig.getRetryTimesByOverrated()) {
-                        taskScheduler.sendToQueueRetry(taskData);
-                    }
-                } else if (taskData.getState() == TaskData.STATUS_FAIL_PARTNER) {
-                    if (taskData.getRanTimes() < taskConfig.getRetryTimesByPartner()) {
-                        taskScheduler.sendToQueueRetry(taskData);
-                    }
-                }
-            }
-        }
+
 		// 不管如何，都给设定结束日期。
 		taskData.setFinishDate(new Date());
 		// 保存日志与统计信息
 		taskAPI.sendTaskRunnerLog(taskData);
+
 		if (taskData.getRunType() == TaskData.RUN_TYPE_GLOBAL_RPC || taskData.getRunType() == TaskData.RUN_TYPE_LOCAL) {
+            // 如果异常，根据任务设置，重新跑
+            if(taskData.getRetryType() == TaskData.RETRY_TYPE_AUTO) {
+                if (taskData.getState() > TaskData.STATUS_SUCCESS) {
+                    if (taskData.getState() == TaskData.STATUS_FAIL_CONFIG) {
+                        if (taskData.getRanTimes() < taskConfig.getRetryTimesByOverrated()) {
+                            taskData = process(taskData);
+                        }
+                    } else if (taskData.getState() == TaskData.STATUS_FAIL_PARTNER) {
+                        if (taskData.getRanTimes() < taskConfig.getRetryTimesByPartner()) {
+                            taskData = process(taskData);
+                        }
+                    }
+                }
+            }
 			return taskData;
 		} else {
+            // 如果异常，根据任务设置，重新跑
+            if(taskData.getRetryType() == TaskData.RETRY_TYPE_AUTO) {
+                if (taskData.getState() > TaskData.STATUS_SUCCESS) {
+                    if (taskData.getState() == TaskData.STATUS_FAIL_CONFIG) {
+                        if (taskData.getRanTimes() < taskConfig.getRetryTimesByOverrated()) {
+                            taskScheduler.sendToQueueRetry(taskData);
+                        }
+                    } else if (taskData.getState() == TaskData.STATUS_FAIL_PARTNER) {
+                        if (taskData.getRanTimes() < taskConfig.getRetryTimesByPartner()) {
+                            taskScheduler.sendToQueueRetry(taskData);
+                        }
+                    }
+                }
+            }
 			return null;
 		}
 	}
