@@ -52,14 +52,14 @@ public class TaskProperties {
     private int taskRpcMaxThreadNum = 200;
 
     /**
-     * 队列任务重试延时毫秒数。
+     * 队列任务重试延时毫秒数，默认30秒
      */
-    private long taskQueueRetryDelay = 1000;
+    private long taskQueueRetryDelay = 30000;
 
     /**
-     *  rpc任务重试延时毫秒数。
+     *  rpc任务重试延时毫秒数，默认100毫秒
      */
-    private long taskRpcRetryDelay = 50;
+    private long taskRpcRetryDelay = 100;
 
     /**
      * 运行主机ID

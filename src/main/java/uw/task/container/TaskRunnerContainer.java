@@ -236,14 +236,14 @@ public class TaskRunnerContainer {
             if (taskData.getRetryType() == TaskData.RETRY_TYPE_AUTO) {
                 if (taskData.getState() > TaskData.STATUS_SUCCESS) {
                     //设置任务延时，原计划使用Math.pow(2,x)的，后来决定不用了
-                    taskData.setTaskDelay((long)Math.pow(2,taskData.getRanTimes())*taskProperties.getTaskRpcRetryDelay());
+                    taskData.setTaskDelay(taskData.getRanTimes()*taskProperties.getTaskRpcRetryDelay());
                     if (taskData.getState() == TaskData.STATUS_FAIL_CONFIG) {
                         if (taskData.getRanTimes() < taskConfig.getRetryTimesByOverrated()) {
-                            taskData = process(taskData);
+                            taskData = taskScheduler.runTaskLocal(cleanTaskInfo(taskData));
                         }
                     } else if (taskData.getState() == TaskData.STATUS_FAIL_PARTNER) {
                         if (taskData.getRanTimes() < taskConfig.getRetryTimesByPartner()) {
-                            taskData = process(taskData);
+                            taskData = taskScheduler.runTaskLocal(cleanTaskInfo(taskData));
                         }
                     }
                 }
@@ -257,17 +257,34 @@ public class TaskRunnerContainer {
                     taskData.setTaskDelay(taskData.getRanTimes()*taskProperties.getTaskQueueRetryDelay());
                     if (taskData.getState() == TaskData.STATUS_FAIL_CONFIG) {
                         if (taskData.getRanTimes() < taskConfig.getRetryTimesByOverrated()) {
-                            taskScheduler.sendToQueueRetry(taskData);
+                            taskScheduler.sendToQueue(cleanTaskInfo(taskData));
                         }
                     } else if (taskData.getState() == TaskData.STATUS_FAIL_PARTNER) {
                         if (taskData.getRanTimes() < taskConfig.getRetryTimesByPartner()) {
-                            taskScheduler.sendToQueueRetry(taskData);
+                            taskScheduler.sendToQueue(cleanTaskInfo(taskData));
                         }
                     }
                 }
             }
             return null;
         }
+    }
+
+    /**
+     * 清理任务信息。
+     * @param taskData
+     */
+    private TaskData cleanTaskInfo(TaskData taskData){
+        //先清除一些任务信息。
+        taskData.setHostIp(null);
+        taskData.setHostId(null);
+        taskData.setConsumeDate(null);
+        taskData.setRunDate(null);
+        taskData.setFinishDate(null);
+        taskData.setResultData(null);
+        taskData.setErrorInfo(null);
+        taskData.setState(TaskData.STATUS_UNKNOW);
+        return taskData;
     }
 
 }

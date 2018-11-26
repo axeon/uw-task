@@ -11,6 +11,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import uw.task.conf.TaskMetaInfoManager;
 import uw.task.conf.TaskProperties;
 import uw.task.container.TaskRunnerContainer;
+import uw.task.exception.TaskRuntimeException;
 import uw.task.util.GlobalSequenceManager;
 import uw.task.util.TaskMessageConverter;
 
@@ -85,72 +86,8 @@ public class TaskScheduler {
     }
 
     /**
-     * 把任务发送到队列中进行自动重试
-     *
-     * @param taskData 任务数据
-     */
-    public void sendToQueueRetry(final TaskData<?, ?> taskData) {
-        Message message = buildRetryTaskQueueMessage(taskData);
-        String queue = message.getMessageProperties().getConsumerQueue();
-        rabbitTemplate.send(queue, queue, message);
-    }
-
-    /**
-     * 构造用于重试的Task消息对象
-     *
-     * @param taskData
-     * @return
-     */
-    @SuppressWarnings("unchecked")
-    private Message buildRetryTaskQueueMessage(final TaskData taskData) {
-        // process方法set了啥,除ranTimes、taskClass、taskParam外,都应该还原
-        Date oriConsumeDate = taskData.getConsumeDate();
-        String oriHostIp = taskData.getHostIp();
-        String oriHostId = taskData.getHostId();
-
-        taskData.setConsumeDate(null);
-        taskData.setHostIp(null);
-        taskData.setHostId(null);
-
-        Date oriRunDate = taskData.getRunDate();
-        Object oriResultData = taskData.getResultData();
-        int oriState = taskData.getState();
-        String oriErrorInfo = taskData.getErrorInfo();
-
-        taskData.setRunDate(null);
-        taskData.setResultData(null);
-        taskData.setState(TaskData.STATUS_UNKNOW);
-        taskData.setErrorInfo(null);
-
-        // 会被buildTaskQueueMessage所覆盖的值
-        long oriTaskId = taskData.getId();
-        Date oriQueueDate = taskData.getQueueDate();
-        int oriRunType = taskData.getRunType();
-
-        // 构建队列消息
-        Message message = buildTaskQueueMessage(taskData);
-
-        // 数据还原
-        taskData.setConsumeDate(oriConsumeDate);
-        taskData.setHostIp(oriHostIp);
-        taskData.setHostId(oriHostId);
-
-        taskData.setRunDate(oriRunDate);
-        taskData.setResultData(oriResultData);
-        taskData.setState(oriState);
-        taskData.setErrorInfo(oriErrorInfo);
-
-        taskData.setId(oriTaskId);
-        taskData.setQueueDate(oriQueueDate);
-        taskData.setRunType(oriRunType);
-
-        return message;
-    }
-
-
-    /**
      * 同步执行任务，可能会导致阻塞。
-     *  在调用的时候，尤其要注意，taskData对象不可改变！
+     * 在调用的时候，尤其要注意，taskData对象不可改变！
      *
      * @param taskData 任务数据
      * @return
@@ -161,7 +98,7 @@ public class TaskScheduler {
 
     /**
      * 同步执行任务，可能会导致阻塞。
-     *  在调用的时候，尤其要注意，taskData对象不可改变！
+     * 在调用的时候，尤其要注意，taskData对象不可改变！
      *
      * @param taskData 任务数据
      * @return
@@ -175,6 +112,8 @@ public class TaskScheduler {
         if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && TaskMetaInfoManager.checkRunnerRunLocal(taskData)) {
             // 启动本地运行模式。
             taskData.setRunType(TaskData.RUN_TYPE_LOCAL);
+        }
+        if (taskData.getRunType() == TaskData.RUN_TYPE_LOCAL) {
             taskRunnerContainer.process(taskData);
             return taskData;
         } else {
@@ -196,11 +135,36 @@ public class TaskScheduler {
         }
     }
 
+    /**
+     * 同步执行任务，可能会导致阻塞。
+     * 在调用的时候，尤其要注意，taskData对象不可改变！
+     *
+     * @param taskData 任务数据
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    public <TP, RD> TaskData<TP, RD> runTaskLocal(final TaskData<TP, RD> taskData) {
+        taskData.setId(globalSequenceManager.nextId("task_runner_log"));
+        taskData.setQueueDate(new Date());
+        // 当自动RPC，并且本地有runner，而且target匹配的时候，运行在本地模式下。
+        if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && TaskMetaInfoManager.checkRunnerRunLocal(taskData)) {
+            // 启动本地运行模式。
+            taskData.setRunType(TaskData.RUN_TYPE_LOCAL);
+        }
+        if (taskData.getRunType() == TaskData.RUN_TYPE_LOCAL) {
+            taskRunnerContainer.process(taskData);
+            return taskData;
+        } else {
+            throw new TaskRuntimeException(taskData.getClass().getName() + " is not a local task! ");
+        }
+    }
+
 
     /**
      * 远程运行任务，并返回future<TaskData<?,?>>。 如果需要获得数据，可以使用futrue.get()来获得。
      * 此方法要谨慎使用，因为task存在限速，大并发下可能会导致线程数超。
-     *  在调用的时候，尤其要注意，taskData对象不可改变！
+     * 在调用的时候，尤其要注意，taskData对象不可改变！
+     *
      * @param taskData 任务数据
      * @return
      */
@@ -211,7 +175,8 @@ public class TaskScheduler {
     /**
      * 远程运行任务，并返回future<TaskData<?,?>>。 如果需要获得数据，可以使用futrue.get()来获得。
      * 此方法要谨慎使用，因为task存在限速，大并发下可能会导致线程数超。
-     *  在调用的时候，尤其要注意，taskData对象不可改变！
+     * 在调用的时候，尤其要注意，taskData对象不可改变！
+     *
      * @param taskData 任务数据
      * @return
      */
@@ -225,6 +190,8 @@ public class TaskScheduler {
         if (taskData.getRunType() == TaskData.RUN_TYPE_AUTO_RPC && TaskMetaInfoManager.checkRunnerRunLocal(taskData)) {
             // 启动本地运行模式。
             taskData.setRunType(TaskData.RUN_TYPE_LOCAL);
+        }
+        if (taskData.getRunType() == TaskData.RUN_TYPE_LOCAL) {
             // 启动本地运行模式。
             return taskRpcService.submit(() -> {
                 taskRunnerContainer.process(taskData);
@@ -232,7 +199,7 @@ public class TaskScheduler {
             });
         } else {
             // 全局运行模式
-           taskData.setRunType(TaskData.RUN_TYPE_GLOBAL_RPC);
+            taskData.setRunType(TaskData.RUN_TYPE_GLOBAL_RPC);
             Message message = rabbitTemplate.getMessageConverter().toMessage(taskData, new MessageProperties());
             //加入优先级信息。
             MessageProperties mp = message.getMessageProperties();
