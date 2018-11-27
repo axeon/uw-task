@@ -5,7 +5,7 @@
     <packaging>jar</packaging>
     <groupId>com.umtone</groupId>
     <artifactId>uw-task</artifactId>
-    <version>2.6.7</version>
+    <version>2.6.8</version>
     <name>uw-task</name>
     <description>uw-task包是一个分布式任务框架，通过uw-task可以快速构建基于docker的分布式任务体系，同时支持基于influx的任务运维监控。</description>
     <url>https://github.com/axeon/uw-task</url>
