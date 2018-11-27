@@ -7,6 +7,8 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.beans.BeanUtils;
+import org.springframework.cglib.beans.BeanCopier;
 import uw.task.TaskData;
 import uw.task.TaskListenerManager;
 import uw.task.TaskRunner;
@@ -236,7 +238,7 @@ public class TaskRunnerContainer {
             if (taskData.getRetryType() == TaskData.RETRY_TYPE_AUTO) {
                 if (taskData.getState() > TaskData.STATUS_SUCCESS) {
                     //设置任务延时，原计划使用Math.pow(2,x)的，后来决定不用了
-                    taskData.setTaskDelay(taskData.getRanTimes()*taskProperties.getTaskRpcRetryDelay());
+                    taskData.setTaskDelay(taskData.getRanTimes() * taskProperties.getTaskRpcRetryDelay());
                     if (taskData.getState() == TaskData.STATUS_FAIL_CONFIG) {
                         if (taskData.getRanTimes() < taskConfig.getRetryTimesByOverrated()) {
                             taskData = taskScheduler.runTaskLocal(cleanTaskInfo(taskData));
@@ -254,7 +256,7 @@ public class TaskRunnerContainer {
             if (taskData.getRetryType() == TaskData.RETRY_TYPE_AUTO) {
                 if (taskData.getState() > TaskData.STATUS_SUCCESS) {
                     //设置任务延时，原计划使用Math.pow(2,x)的，后来决定不用了
-                    taskData.setTaskDelay(taskData.getRanTimes()*taskProperties.getTaskQueueRetryDelay());
+                    taskData.setTaskDelay(taskData.getRanTimes() * taskProperties.getTaskQueueRetryDelay());
                     if (taskData.getState() == TaskData.STATUS_FAIL_CONFIG) {
                         if (taskData.getRanTimes() < taskConfig.getRetryTimesByOverrated()) {
                             taskScheduler.sendToQueue(cleanTaskInfo(taskData));
@@ -272,12 +274,16 @@ public class TaskRunnerContainer {
 
     /**
      * 清理任务信息。
-     * @param taskData
+     *
+     * @param srcData
      */
-    private TaskData cleanTaskInfo(TaskData taskData){
+    private TaskData cleanTaskInfo(TaskData srcData) {
+        TaskData taskData = new TaskData();
+        MiscUtils.copyTaskData(srcData, taskData);
         //先清除一些任务信息。
         taskData.setHostIp(null);
         taskData.setHostId(null);
+        taskData.setRefObject(null);
         taskData.setConsumeDate(null);
         taskData.setRunDate(null);
         taskData.setFinishDate(null);
