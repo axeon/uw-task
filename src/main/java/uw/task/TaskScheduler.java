@@ -2,11 +2,15 @@ package uw.task;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.MessageProperties;
+import org.springframework.amqp.rabbit.core.ChannelCallback;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import uw.task.conf.TaskMetaInfoManager;
 import uw.task.conf.TaskProperties;
@@ -217,4 +221,20 @@ public class TaskScheduler {
             });
         }
     }
+
+    /**
+     * 获得队列信息。
+     *
+     * @param queueName
+     * @return 0 是消息数量 1 是消费者数量
+     */
+    public int[] getQueueInfo(String queueName) {
+        AMQP.Queue.DeclareOk declareOk = this.rabbitTemplate.execute(new ChannelCallback<AMQP.Queue.DeclareOk>() {
+            public AMQP.Queue.DeclareOk doInRabbit(Channel channel) throws Exception {
+                return channel.queueDeclarePassive(queueName);
+            }
+        });
+        return new int[]{declareOk.getMessageCount(), declareOk.getConsumerCount()};
+    }
+
 }
