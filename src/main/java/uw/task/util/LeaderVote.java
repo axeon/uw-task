@@ -68,15 +68,8 @@ public class LeaderVote {
 	 * @param name
 	 * @return
 	 */
-	private synchronized VoteInfo getVoteInfo(String name) {
-		VoteInfo vi = map.get(name);
-		if (vi == null) {
-			synchronized (map) {
-				vi = new VoteInfo(name);
-				map.putIfAbsent(name, vi);
-			}
-		}
-		return vi;
+	private VoteInfo getVoteInfo(String name) {
+		return map.computeIfAbsent(name,key->new VoteInfo(name));
 	}
 
 	private long runTimes = 0;
@@ -121,8 +114,8 @@ public class LeaderVote {
 
 		/**
 		 * 默认构造器。
-		 * 
-		 * @param bvo
+		 *
+		 * @param name
 		 */
 		public VoteInfo(String name) {
 			this.bvo = stringRedisTemplate.boundValueOps(REDIS_TAG + name);
@@ -131,7 +124,7 @@ public class LeaderVote {
 
 		/**
 		 * 返回是否是Leader
-		 * 
+		 *
 		 * @return
 		 */
 		public boolean isLeader() {

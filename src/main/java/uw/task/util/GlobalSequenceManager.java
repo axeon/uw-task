@@ -53,10 +53,7 @@ public class GlobalSequenceManager {
 	    int tryCount = 0;
 	    do {
             try {
-                RedisSequence redisSequence = map.get(name);
-                if (redisSequence == null) {
-                    redisSequence = map.computeIfAbsent(name, key -> new RedisSequence(key, SEQUENCE_INCREMENT_NUM));
-                }
+                RedisSequence redisSequence =  map.computeIfAbsent(name, key -> new RedisSequence(key, SEQUENCE_INCREMENT_NUM));
                 return redisSequence.nextId();
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
