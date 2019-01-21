@@ -12,7 +12,7 @@ import org.springframework.data.redis.serializer.GenericToStringSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 /**
- * 基于redis实现的序列管理器。
+ * 基于redis实现的限速管理器。
  *
  * @author axeon
  */
