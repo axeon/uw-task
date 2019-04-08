@@ -2,6 +2,8 @@ package uw.task.conf;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.util.UUID;
 
 /**
@@ -11,41 +13,42 @@ import java.util.UUID;
  */
 @ConfigurationProperties(prefix = "uw.task")
 public class TaskProperties {
+
     /**
      * 是否启用uw-task服务注册和主机注册，默认不启用。
-     * 
+     *
      */
     private boolean enableTaskRegistry = false;
     /**
      * 任务名，必须设置为基础包名。
      */
     private String project;
-    
+
     /**
      * 私有模式。不运行全局target任务。
      */
     private boolean privacyMode = false;
-    
+
     /**
      * croner线程数，默认在3个，建议按照实际croner任务数量*70%。
      */
     private int cronerThreadNum = 3;
-    
+
     /**
      * 任务日志最小线程数,用于发送日志，建议按照runner实际并发数量*10%设置。
      */
     private int taskLogMinThreadNum = 10;
-    
+
     /**
      * 任务日志最大线程数,用于发送日志到服务器端。
      */
     private int taskLogMaxThreadNum = 200;
-    
+
     /**
      * RPC最小线程数,用于执行RPC调用，如不使用rpc，建议设置为1，否则按照最大并发量*10%设置。
      */
     private int taskRpcMinThreadNum = 1;
-    
+
     /**
      * RPC最大线程数,用于执行RPC调用，超过此线程数，将会导致阻塞。
      */
@@ -64,7 +67,7 @@ public class TaskProperties {
     /**
      * 运行主机ID
      */
-    private String hostId = UUID.randomUUID().toString();
+    private String hostId = ManagementFactory.getRuntimeMXBean().getName();
 
     /**
      * 任务服务器
