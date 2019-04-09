@@ -20,31 +20,20 @@ public class LocalRateLimiter {
      * @param name
      * @return
      */
-    public boolean tryAcquire(String name, long timeout, TimeUnit unit) {
-        RateLimiter limiter = map.get(name);
-        if (limiter != null) {
-            return limiter.tryAcquire(1, timeout, unit);
-        } else {
+    public boolean tryAcquire(String name, int requests, int seconds, long waitTime, int permits) {
+        if (requests == 0 || seconds == 0) {
             return true;
         }
-    }
-
-    /**
-     * 初始化一个流量限速器。
-     *
-     * @param name            限速器名称，应是全局唯一的名称
-     * @param limitRate       限速速率
-     * @param limitTimeSecond 限速时间数值
-     * @return 如果已经存在，则返回false，不再创建。
-     */
-    public boolean initLimiter(String name, long limitRate, long limitTimeSecond) {
-        final double rate = (double) limitRate / (double) limitTimeSecond;
+        final double rate = (double) requests / (double) seconds;
         RateLimiter limiter = map.computeIfAbsent(name, key -> RateLimiter.create(rate));
-        if (limiter != null && limiter.getRate() != rate) {
-            limiter.setRate(rate);
-            return true;
+        if (limiter != null) {
+            //检查并修改
+            if (limiter.getRate() != rate) {
+                limiter.setRate(rate);
+            }
+            return limiter.tryAcquire(permits, waitTime, TimeUnit.SECONDS);
         } else {
-            return false;
+            return true;
         }
     }
 

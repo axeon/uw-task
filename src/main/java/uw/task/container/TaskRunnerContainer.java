@@ -113,21 +113,16 @@ public class TaskRunnerContainer {
             if (taskConfig.getRateLimitType() != TaskRunnerConfig.RATE_LIMIT_TYPE_NONE) {
                 if (taskConfig.getRateLimitType() == TaskRunnerConfig.RATE_LIMIT_TYPE_PROCESS) {
                     // 进程内限制
-                    localRateLimiter.initLimiter("", taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime());
-                    boolean flag = localRateLimiter.tryAcquire("", taskConfig.getRateLimitWait(), TimeUnit.SECONDS);
+                    boolean flag = localRateLimiter.tryAcquire("", taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(),taskConfig.getRateLimitWait(), 1);
                     noLimitFlag = flag ? 0 : -1;
                 } else if (taskConfig.getRateLimitType() == TaskRunnerConfig.RATE_LIMIT_TYPE_TASK_PROCESS) {
                     // 进程内+任务名限制
-                    localRateLimiter.initLimiter(taskData.getTaskClass(), taskConfig.getRateLimitValue(),
-                            taskConfig.getRateLimitTime());
-                    boolean flag = localRateLimiter.tryAcquire(taskData.getTaskClass(), taskConfig.getRateLimitWait(),
-                            TimeUnit.SECONDS);
+                    boolean flag = localRateLimiter.tryAcquire(taskData.getTaskClass(), taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(),taskConfig.getRateLimitWait(), 1);
                     noLimitFlag = flag ? 0 : -1;
                 } else if (taskConfig.getRateLimitType() == TaskRunnerConfig.RATE_LIMIT_TYPE_TAG_PROCESS) {
                     // 进程内+任务名限制
                     String locker = taskData.getTaskClass() + "$" + String.valueOf(taskData.getRateLimitTag());
-                    localRateLimiter.initLimiter(locker, taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime());
-                    boolean flag = localRateLimiter.tryAcquire(locker, taskConfig.getRateLimitWait(), TimeUnit.SECONDS);
+                    boolean flag = localRateLimiter.tryAcquire(locker, taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(),taskConfig.getRateLimitWait(), 1);
                     noLimitFlag = flag ? 0 : -1;
                 } else {
                     String locker = taskData.getTaskClass();
@@ -153,12 +148,10 @@ public class TaskRunnerContainer {
                     }
                     // 全局流量限制
                     // 检查是否超过流量限制
-                    globalRateLimiter.initLimiter(locker, taskConfig.getRateLimitValue(), TimeUnit.SECONDS,
-                            taskConfig.getRateLimitTime());
                     // 开始进行延时等待
                     long end = System.currentTimeMillis() + taskConfig.getRateLimitWait() * 1000;
                     while (System.currentTimeMillis() <= end) {
-                        noLimitFlag = globalRateLimiter.tryAcquire(locker);
+                        noLimitFlag = globalRateLimiter.tryAcquire(locker,taskConfig.getRateLimitValue(),taskConfig.getRateLimitTime(),1);
                         if (noLimitFlag == 0) {
                             break;
                         }

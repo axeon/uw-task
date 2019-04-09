@@ -1,5 +1,6 @@
 package uw.task.util;
 
+import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -8,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.data.redis.serializer.GenericToStringSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
@@ -20,11 +22,35 @@ public class GlobalRateLimiter {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalRateLimiter.class);
 
-    private static final String REDIS_TAG = "_RATE_LIMIT_";
+    private static final String REDIS_PREFIX = "TaskRateLimit:";
 
     private final RedisTemplate<String, Long> redisTemplate;
 
-    private ConcurrentHashMap<String, RedisRateLimiter> map = new ConcurrentHashMap<>();
+    /**
+     * LUA脚本。
+     * 返回值为：可用请求数,等待毫秒数。
+     */
+    private static final RedisScript<Long> LUA_RATE_LIMIT = RedisScript.of(
+            "local key = KEYS[1];\n" +
+                    "local requests = tonumber(ARGV[1]);\n" +
+                    "local millis = tonumber(ARGV[2])*1000;\n" +
+                    "local permits = tonumber(ARGV[3]);\n" +
+                    "local remainRequests=0;\n" +
+                    "local waitMillis=0;\n" +
+                    "local nowRate= redis.call('INCRBY', key,permits);\n" +
+                    "if (nowRate==permits) then \n" +//如果是第一次执行，设置有效期保护。
+                    "    redis.call('PEXPIRE',key,millis);\n" +
+                    "end\n" +
+                    "remainRequests = requests-nowRate;\n" +
+                    "if (remainRequests<1) then \n" +//请求数超过限制
+                    "    waitMillis = redis.call('PTTL',key);\n" +
+                    "    if (waitMillis == -1) then \n" +
+                    "        redis.call('PEXPIRE',key,millis);\n" +
+                    "        waitMillis = millis;\n" +
+                    "    end\n" +
+                    "end \n" +
+                    "return waitMillis", Long.class);
+
 
     public GlobalRateLimiter(final RedisConnectionFactory redisConnectionFactory) {
         redisTemplate = new RedisTemplate<String, Long>();
@@ -36,165 +62,20 @@ public class GlobalRateLimiter {
     }
 
     /**
-     * 尝试获得限制允许状态。
+     * 尝试可否获得授权。
      *
-     * @param name
-     * @return
+     * @param permits       申请访问次数
+     * @return 如果未超限则返回0，-1为不确定时间，其他为需要等待的毫秒数
      */
-    public long tryAcquire(String name) {
-        long wait = 0;
-        try {
-            RedisRateLimiter limiter = map.get(name);
-            if (limiter != null) {
-                wait = limiter.tryAcquire(1);
-            }
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
+    public long tryAcquire(String name, int requests, int seconds, int permits) {
+        if (requests == 0 || seconds == 0) {
+            return 0;
         }
-        return wait;
-    }
-
-    /**
-     * 初始化一个流量限速器。
-     *
-     * @param name           限速器名称，应是全局唯一的名称
-     * @param limitRate      限速速率
-     * @param limitTimeUnit  限速时间单位
-     * @param limitTimeValue 限速时间数值
-     * @return 如果成功则返回true。
-     */
-    public boolean initLimiter(String name, long limitRate, TimeUnit limitTimeUnit, long limitTimeValue) {
-        boolean flag = false;
-        try {
-            RedisRateLimiter limiter = map.computeIfAbsent(name, key -> new RedisRateLimiter(name, limitRate, limitTimeUnit, limitTimeValue));
-            if (limiter!=null) {
-                limiter.setLimitRate(limitRate);
-                limiter.setLimitTimeUnit(limitTimeUnit);
-                limiter.setLimitTimeValue(limitTimeValue);
-                flag = true;
-            }
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-        }
-        return flag;
-    }
-
-    /**
-     * redis流量限速器。
-     *
-     * @author axeon
-     */
-    class RedisRateLimiter {
-
-        /**
-         * 限速器名称
-         */
-        private String name;
-        /**
-         * 流量限速
-         */
-        private long limitRate = 1l;
-        /**
-         * ValueOperations实例
-         */
-        private ValueOperations<String, Long> operations;
-
-        /**
-         * 限速时间单位
-         */
-        private TimeUnit limitTimeUnit = TimeUnit.SECONDS;
-
-        /**
-         * 限速时间数值。
-         */
-        private long limitTimeValue = 1;
-
-        /**
-         * @return the limitRate
-         */
-        public long getLimitRate() {
-            return limitRate;
-        }
-
-        /**
-         * @param limitRate the limitRate to set
-         */
-        public void setLimitRate(long limitRate) {
-            this.limitRate = limitRate;
-        }
-
-        /**
-         * @return the limitTimeUnit
-         */
-        public TimeUnit getLimitTimeUnit() {
-            return limitTimeUnit;
-        }
-
-        /**
-         * @param limitTimeUnit the limitTimeUnit to set
-         */
-        public void setLimitTimeUnit(TimeUnit limitTimeUnit) {
-            this.limitTimeUnit = limitTimeUnit;
-        }
-
-        /**
-         * @return the limitTimeValue
-         */
-        public long getLimitTimeValue() {
-            return limitTimeValue;
-        }
-
-        /**
-         * @param limitTimeValue the limitTimeValue to set
-         */
-        public void setLimitTimeValue(long limitTimeValue) {
-            this.limitTimeValue = limitTimeValue;
-        }
-
-        /**
-         * 初始化一个流量限速器。
-         *
-         * @param limitRate      限速速率
-         * @param limitTimeUnit  限速时间单位
-         * @param limitTimeValue 限速时间数值
-         */
-        public RedisRateLimiter(String name, long limitRate, TimeUnit limitTimeUnit, long limitTimeValue) {
-            super();
-            this.name = REDIS_TAG + name;
-            this.limitRate = limitRate;
-            this.limitTimeUnit = limitTimeUnit;
-            this.limitTimeValue = limitTimeValue;
-            this.operations = redisTemplate.opsForValue();
-        }
-
-        /**
-         * 检查是否超限。
-         *
-         * @param permits
-         * @return 如果未超限则返回0，否则返回需要等待的秒数
-         */
-        synchronized long tryAcquire(int permits) {
-            long expire = 0;
-            long value = operations.increment(name, permits);
-            if (value > 1) {
-                if (value > limitRate) {
-                    expire = redisTemplate.getExpire(name, TimeUnit.MILLISECONDS);
-                    if (expire == -1) {
-                        // 需要补刀
-                        redisTemplate.expire(name, limitTimeValue, limitTimeUnit);
-                        expire = 1000;
-                    }
-                }
-            } else {
-                redisTemplate.expire(name, limitTimeValue, limitTimeUnit);
-            }
-            if (expire <= 0) {
-                return 0;
-            } else {
-                return expire;
-            }
-        }
-
+        Long waitLimit = redisTemplate.execute(LUA_RATE_LIMIT, Collections.singletonList(REDIS_PREFIX + name), requests,seconds, permits);
+        if (waitLimit==null)
+            return 0;
+        else
+            return waitLimit;
     }
 
 }

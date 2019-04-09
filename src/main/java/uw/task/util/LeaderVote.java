@@ -24,7 +24,7 @@ public class LeaderVote {
 	/**
 	 * REDIS前缀
 	 */
-	private static final String REDIS_TAG = "_LEADER_VOTE_";
+	private static final String REDIS_TAG = "LeaderVote:";
 
 	/**
 	 * redis模板
