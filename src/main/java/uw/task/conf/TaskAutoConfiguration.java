@@ -104,13 +104,10 @@ public class TaskAutoConfiguration {
     @Bean
     public TaskScheduler taskScheduler(final ApplicationContext context,
                                        final TaskProperties taskProperties,
-                                       final AuthClientProperties authClientProperties,
                                        @Qualifier("tokenRestTemplate") final RestTemplate restTemplate,
                                        final TaskListenerManager taskListenerManager,
                                        final ClientResources clientResources,
                                        final LogClient logClient) {
-        // 委托给authClientProperties获取当前主机id
-        taskProperties.setHostId(authClientProperties.getHostId());
         // task自定义的rabbit连接工厂
         ConnectionFactory taskRabbitConnectionFactory = getTaskRabbitConnectionFactory(taskProperties.getRabbitmq());
         // task自定义的redis连接工厂
