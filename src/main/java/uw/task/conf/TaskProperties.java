@@ -3,8 +3,6 @@ package uw.task.conf;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
-import java.util.UUID;
 
 /**
  * 任务配置类。
@@ -72,7 +70,7 @@ public class TaskProperties {
     /**
      * 任务服务器
      */
-    private String serverHost;
+    private String taskServerHost;
 
     /**
      * Redis配置
@@ -189,17 +187,17 @@ public class TaskProperties {
 	}
 
 	/**
-     * @return the serverHost
+     * @return the taskServerHost
      */
-    public String getServerHost() {
-        return serverHost;
+    public String getTaskServerHost() {
+        return taskServerHost;
     }
 
     /**
-     * @param serverHost the serverHost to set
+     * @param taskServerHost the taskServerHost to set
      */
-    public void setServerHost(String serverHost) {
-        this.serverHost = serverHost;
+    public void setTaskServerHost(String taskServerHost) {
+        this.taskServerHost = taskServerHost;
     }
 
     public RedisProperties getRedis() {
