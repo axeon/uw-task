@@ -30,17 +30,7 @@ public class TaskProperties {
     /**
      * croner线程数，默认在3个，建议按照实际croner任务数量*70%。
      */
-    private int cronerThreadNum = 3;
-
-    /**
-     * 任务日志最小线程数,用于发送日志，建议按照runner实际并发数量*10%设置。
-     */
-    private int taskLogMinThreadNum = 10;
-
-    /**
-     * 任务日志最大线程数,用于发送日志到服务器端。
-     */
-    private int taskLogMaxThreadNum = 200;
+    private int cronerThreadNum = 5;
 
     /**
      * RPC最小线程数,用于执行RPC调用，如不使用rpc，建议设置为1，否则按照最大并发量*10%设置。
@@ -50,7 +40,7 @@ public class TaskProperties {
     /**
      * RPC最大线程数,用于执行RPC调用，超过此线程数，将会导致阻塞。
      */
-    private int taskRpcMaxThreadNum = 200;
+    private int taskRpcMaxThreadNum = 100;
 
     /**
      * 队列任务重试延时毫秒数，默认2秒
@@ -110,22 +100,6 @@ public class TaskProperties {
 	 */
 	public void setPrivacyMode(boolean privacyMode) {
 		this.privacyMode = privacyMode;
-	}
-
-	public int getTaskLogMinThreadNum() {
-		return taskLogMinThreadNum;
-	}
-
-	public void setTaskLogMinThreadNum(int taskLogMinThreadNum) {
-		this.taskLogMinThreadNum = taskLogMinThreadNum;
-	}
-
-	public int getTaskLogMaxThreadNum() {
-		return taskLogMaxThreadNum;
-	}
-
-	public void setTaskLogMaxThreadNum(int taskLogMaxThreadNum) {
-		this.taskLogMaxThreadNum = taskLogMaxThreadNum;
 	}
 
 	public int getTaskRpcMinThreadNum() {

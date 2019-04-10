@@ -1,5 +1,6 @@
 package uw.task.conf;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.lettuce.core.resource.ClientResources;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
@@ -15,6 +16,7 @@ import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.context.properties.PropertyMapper;
 import org.springframework.context.ApplicationContext;
@@ -42,6 +44,7 @@ import uw.task.container.TaskRunnerContainer;
 
 import javax.annotation.PreDestroy;
 import java.time.Duration;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import uw.task.entity.TaskCronerLog;
@@ -56,7 +59,8 @@ import uw.task.util.TaskMessageConverter;
 
 /**
  * 自动装配类 Created by Acris on 2017/5/23.
- * @author Acris,liliang
+ *
+ * @author Acris, liliang
  */
 @Configuration
 @EnableScheduling
@@ -91,7 +95,13 @@ public class TaskAutoConfiguration {
     private AtomicBoolean initFlag = new AtomicBoolean(false);
 
     /**
+     * 内部自持任务。
+     */
+    private ScheduledExecutorService scheduledExecutorService;
+
+    /**
      * 声明 taskScheduler bean
+     *
      * @param context
      * @param taskProperties
      * @param restTemplate
@@ -125,9 +135,9 @@ public class TaskAutoConfiguration {
         logClient.regLogObject(TaskRunnerLog.class);
         StringRedisTemplate redisTemplate = new StringRedisTemplate(taskRedisConnectionFactory);
         TaskMetricsService taskMetricsService = new TaskMetricsService(redisTemplate);
-        taskLogService = new TaskLogService(logClient,taskMetricsService);
+        taskLogService = new TaskLogService(logClient, taskMetricsService);
         // taskAPI
-        TaskAPI taskAPI = new TaskAPI(taskProperties, restTemplate,taskLogService);
+        TaskAPI taskAPI = new TaskAPI(taskProperties, restTemplate, taskLogService);
         // rabbit模板
         RabbitTemplate rabbitTemplate = getTaskRabbitTemplate(taskRabbitConnectionFactory);
         // rabiit管理器
@@ -159,71 +169,32 @@ public class TaskAutoConfiguration {
     }
 
     /**
-     * ApplicationContext初始化完成或刷新后执行init方法
+     * ApplicationReadyEvent初始化完成或刷新后执行init方法
      */
-    @EventListener(ContextRefreshedEvent.class)
+    @EventListener(ApplicationReadyEvent.class)
     public void handleContextRefresh() {
         if (initFlag.compareAndSet(false, true)) {
             serverConfig.init();
         }
-    }
-
-    /**
-     * 一秒写一次RunnerLog
-     */
-    @Scheduled(initialDelay = 0, fixedRate = 1000)
-    public void writeRunnerLog() {
+        //task自持任务
+        scheduledExecutorService = Executors.newScheduledThreadPool(5,
+                new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskSelf-%d").build());
         taskLogService.sendRunnerLogToServer();
-    }
-
-    /**
-     * 一秒写一次CronerLog
-     */
-    @Scheduled(initialDelay = 0, fixedRate = 1000)
-    public void writeCronerLog() {
-        taskLogService.sendCronerLogToServer();
-    }
-
-    /**
-     * 更新主机状态。10秒更新一次。
-     */
-    @Scheduled(initialDelay = 0, fixedRate = 10000)
-    public void updateStatus() {
-        serverConfig.updateStatus();
-    }
-
-    /**
-     * 5分钟加载一次。 用于同步当前系统内的队列资源。
-     */
-    @Scheduled(fixedRate = 300000)
-    public void loadSysQueue() {
-        serverConfig.loadSysQueue();
-    }
-
-    /**
-     * 注册当前所有的服务。 每隔1分钟刷新一次。
-     */
-    @Scheduled(initialDelay = 0, fixedRate = 60000)
-    public void updateConfig() {
-        serverConfig.updateConfig();
-    }
-
-
-    /**
-     * 20秒检查一次leader状态。
-     */
-    @Scheduled(initialDelay = 3000, fixedRate = 3000)
-    public void batchCheckLeaderStatus() {
-        leaderVote.batchCheckLeaderStatus();
+        scheduledExecutorService.scheduleAtFixedRate(() -> taskLogService.sendRunnerLogToServer(), 0, 1, TimeUnit.SECONDS);
+        scheduledExecutorService.scheduleAtFixedRate(() -> taskLogService.sendCronerLogToServer(), 1, 1, TimeUnit.SECONDS);
+        scheduledExecutorService.scheduleAtFixedRate(() -> serverConfig.updateStatus(), 0, 10, TimeUnit.SECONDS);
+        scheduledExecutorService.scheduleAtFixedRate(() -> serverConfig.loadSysQueue(), 0, 30, TimeUnit.SECONDS);
+        scheduledExecutorService.scheduleAtFixedRate(() -> serverConfig.loadSysQueue(), 0, 60, TimeUnit.SECONDS);
+        scheduledExecutorService.scheduleAtFixedRate(() -> leaderVote.batchCheckLeaderStatus(), 0, 60, TimeUnit.SECONDS);
     }
 
 
     @PreDestroy
     public void destroy() {
+        scheduledExecutorService.shutdown();
         serverConfig.stopAllTaskRunner();
         taskCronerContainer.stopAllTaskCroner();
     }
-
 
     /**
      * 获得任务自定义的rabbitConnectionFactory
