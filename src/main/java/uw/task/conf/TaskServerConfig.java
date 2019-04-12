@@ -110,14 +110,14 @@ public class TaskServerConfig {
     public void init() {
         initCronerMap();
         initRunnerMap();
-        // 如果不启动任务注册，则立即拉取主机配置，用于自动RPC服务检查。
-        if (!taskProperties.isEnableTaskRegistry()) {
-            if (log.isDebugEnabled()) {
-                log.debug("正在拉取主机配置...");
-            }
-            // 拉取主机配置。
-            TaskMetaInfoManager.targetConfig = taskAPI.getServerTargetConfig();
-        }
+    }
+
+    /**
+     * 是否开启任务注册。
+     * @return
+     */
+    public boolean isEnableTaskRegistry(){
+        return taskProperties.isEnableTaskRegistry();
     }
 
     /**

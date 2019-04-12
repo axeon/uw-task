@@ -175,23 +175,29 @@ public class TaskAutoConfiguration {
     public void handleContextRefresh() {
         if (initFlag.compareAndSet(false, true)) {
             serverConfig.init();
+            //task自持任务
+            if (serverConfig.isEnableTaskRegistry()) {
+                scheduledExecutorService = Executors.newScheduledThreadPool(6,
+                        new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskSelf-%d").build());
+                scheduledExecutorService.scheduleAtFixedRate(() -> serverConfig.updateStatus(), 0, 30, TimeUnit.SECONDS);
+                scheduledExecutorService.scheduleAtFixedRate(() -> serverConfig.updateConfig(), 0, 30, TimeUnit.SECONDS);
+                scheduledExecutorService.scheduleAtFixedRate(() -> leaderVote.batchCheckLeaderStatus(), 0, 60, TimeUnit.SECONDS);
+                scheduledExecutorService.scheduleAtFixedRate(() -> taskLogService.sendRunnerLogToServer(), 1, 1, TimeUnit.SECONDS);
+                scheduledExecutorService.scheduleAtFixedRate(() -> taskLogService.sendCronerLogToServer(), 2, 1, TimeUnit.SECONDS);
+            } else {
+                scheduledExecutorService = Executors.newScheduledThreadPool(1,
+                        new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskSelf-%d").build());
+            }
+            scheduledExecutorService.scheduleAtFixedRate(() -> serverConfig.loadSysQueue(), 0, 60, TimeUnit.SECONDS);
         }
-        //task自持任务
-        scheduledExecutorService = Executors.newScheduledThreadPool(5,
-                new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskSelf-%d").build());
-        taskLogService.sendRunnerLogToServer();
-        scheduledExecutorService.scheduleAtFixedRate(() -> taskLogService.sendRunnerLogToServer(), 0, 1, TimeUnit.SECONDS);
-        scheduledExecutorService.scheduleAtFixedRate(() -> taskLogService.sendCronerLogToServer(), 1, 1, TimeUnit.SECONDS);
-        scheduledExecutorService.scheduleAtFixedRate(() -> serverConfig.updateStatus(), 0, 10, TimeUnit.SECONDS);
-        scheduledExecutorService.scheduleAtFixedRate(() -> serverConfig.loadSysQueue(), 0, 30, TimeUnit.SECONDS);
-        scheduledExecutorService.scheduleAtFixedRate(() -> serverConfig.loadSysQueue(), 0, 60, TimeUnit.SECONDS);
-        scheduledExecutorService.scheduleAtFixedRate(() -> leaderVote.batchCheckLeaderStatus(), 0, 60, TimeUnit.SECONDS);
     }
 
 
     @PreDestroy
     public void destroy() {
-        scheduledExecutorService.shutdown();
+        if (scheduledExecutorService != null) {
+            scheduledExecutorService.shutdown();
+        }
         serverConfig.stopAllTaskRunner();
         taskCronerContainer.stopAllTaskCroner();
     }
