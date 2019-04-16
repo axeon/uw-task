@@ -61,14 +61,7 @@ public class TaskMetaInfoManager {
 	 * @return
 	 */
 	public static boolean checkRunnerRunLocal(TaskData<?, ?> taskData) {
-		boolean exists = runnerMap.containsKey(taskData.getTaskClass());
-		boolean matchTarget = false;
-		if (targetConfig != null) {
-			if (targetConfig.contains(taskData.getRunTarget())) {
-				matchTarget = true;
-			}
-		}
-		return exists && matchTarget;
+		return runnerMap.containsKey(taskData.getTaskClass());
 	}
 
 	/**
