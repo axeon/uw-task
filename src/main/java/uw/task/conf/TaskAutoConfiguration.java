@@ -182,12 +182,12 @@ public class TaskAutoConfiguration {
                 scheduledExecutorService.scheduleAtFixedRate(() -> serverConfig.updateStatus(), 0, 30, TimeUnit.SECONDS);
                 scheduledExecutorService.scheduleAtFixedRate(() -> serverConfig.updateConfig(), 0, 30, TimeUnit.SECONDS);
                 scheduledExecutorService.scheduleAtFixedRate(() -> leaderVote.batchCheckLeaderStatus(), 0, 60, TimeUnit.SECONDS);
-                scheduledExecutorService.scheduleAtFixedRate(() -> taskLogService.sendRunnerLogToServer(), 1, 1, TimeUnit.SECONDS);
-                scheduledExecutorService.scheduleAtFixedRate(() -> taskLogService.sendCronerLogToServer(), 2, 1, TimeUnit.SECONDS);
             } else {
-                scheduledExecutorService = Executors.newScheduledThreadPool(1,
+                scheduledExecutorService = Executors.newScheduledThreadPool(3,
                         new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskSelf-%d").build());
             }
+            scheduledExecutorService.scheduleAtFixedRate(() -> taskLogService.sendRunnerLogToServer(), 1, 1, TimeUnit.SECONDS);
+            scheduledExecutorService.scheduleAtFixedRate(() -> taskLogService.sendCronerLogToServer(), 2, 1, TimeUnit.SECONDS);
             scheduledExecutorService.scheduleAtFixedRate(() -> serverConfig.loadSysQueue(), 0, 60, TimeUnit.SECONDS);
         }
     }
