@@ -60,7 +60,7 @@ public class TaskProperties {
     /**
      * 任务服务器
      */
-    private String taskServerHost;
+    private String taskCenterHost;
 
     /**
      * Redis配置
@@ -161,17 +161,17 @@ public class TaskProperties {
 	}
 
 	/**
-     * @return the taskServerHost
+     * @return the taskCenterHost
      */
-    public String getTaskServerHost() {
-        return taskServerHost;
+    public String getTaskCenterHost() {
+        return taskCenterHost;
     }
 
     /**
-     * @param taskServerHost the taskServerHost to set
+     * @param taskCenterHost the taskCenterHost to set
      */
-    public void setTaskServerHost(String taskServerHost) {
-        this.taskServerHost = taskServerHost;
+    public void setTaskCenterHost(String taskCenterHost) {
+        this.taskCenterHost = taskCenterHost;
     }
 
     public RedisProperties getRedis() {

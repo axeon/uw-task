@@ -66,7 +66,7 @@ public class TaskAPI {
         boolean privacyMode = taskProperties.isPrivacyMode();
         try {
             String[] data = restTemplate.getForObject(
-                    taskProperties.getTaskServerHost() + "/taskapi/target/config?targetType={targetType}", String[].class,
+                    taskProperties.getTaskCenterHost() + "/taskapi/target/config?targetType={targetType}", String[].class,
                     privacyMode ? 1 : 0);
             targetConfig = Arrays.asList(data);
         } catch (Exception e) {
@@ -95,7 +95,7 @@ public class TaskAPI {
         taskHostStatus.setHostId(taskProperties.getHostId());
         taskHostStatus.setTaskProject(taskProperties.getProject());
         try {
-            ip = restTemplate.postForObject(taskProperties.getTaskServerHost() + "/taskapi/host/status", taskHostStatus,
+            ip = restTemplate.postForObject(taskProperties.getTaskCenterHost() + "/taskapi/host/status", taskHostStatus,
                     String.class);
             hostIp = ip;
         } catch (Exception e) {
@@ -111,7 +111,7 @@ public class TaskAPI {
      */
     public TaskCronerConfig initTaskCronerConfig(TaskCronerConfig config) {
         try {
-            config = restTemplate.postForObject(taskProperties.getTaskServerHost() + "/taskapi/croner/config", config,
+            config = restTemplate.postForObject(taskProperties.getTaskCenterHost() + "/taskapi/croner/config", config,
                     TaskCronerConfig.class);
         } catch (Exception e) {
             log.error("TaskAPI.initTaskCronerConfig上传Croner配置到服务端异常:{}", e.getMessage());
@@ -126,7 +126,7 @@ public class TaskAPI {
      */
     public TaskRunnerConfig initTaskRunnerConfig(TaskRunnerConfig config) {
         try {
-            config = restTemplate.postForObject(taskProperties.getTaskServerHost() + "/taskapi/runner/config", config,
+            config = restTemplate.postForObject(taskProperties.getTaskCenterHost() + "/taskapi/runner/config", config,
                     TaskRunnerConfig.class);
         } catch (Exception e) {
             log.error("TaskAPI.initTaskRunnerConfig上传Runner配置到服务端异常:{}", e.getMessage());
@@ -142,7 +142,7 @@ public class TaskAPI {
      */
     public void initTaskContact(TaskContact contact) {
         try {
-            restTemplate.postForLocation(taskProperties.getTaskServerHost() + "/taskapi/contact", contact);
+            restTemplate.postForLocation(taskProperties.getTaskCenterHost() + "/taskapi/contact", contact);
         } catch (Exception e) {
             log.error("TaskAPI.initTaskContact上传联系人信息到服务端异常:{}", e.getMessage());
         }
@@ -158,7 +158,7 @@ public class TaskAPI {
         List<TaskRunnerConfig> list = null;
         try {
             TaskRunnerConfig[] data = restTemplate.getForObject(
-                    taskProperties.getTaskServerHost() + "/taskapi/runner/queue?lastUpdateTime={lastUpdateTime}",
+                    taskProperties.getTaskCenterHost() + "/taskapi/runner/queue?lastUpdateTime={lastUpdateTime}",
                     TaskRunnerConfig[].class, lastUpdateTime);
             list = Arrays.asList(data);
         } catch (Exception e) {
@@ -179,7 +179,7 @@ public class TaskAPI {
         List<TaskRunnerConfig> list = null;
         try {
             TaskRunnerConfig[] data = restTemplate.getForObject(
-                    taskProperties.getTaskServerHost()
+                    taskProperties.getTaskCenterHost()
                             + "/taskapi/runner/config?taskPackage={taskPackage}&lastUpdateTime={lastUpdateTime}",
                     TaskRunnerConfig[].class, taskPackage, lastUpdateTime);
             list = Arrays.asList(data);
@@ -201,7 +201,7 @@ public class TaskAPI {
         List<TaskCronerConfig> list = null;
         try {
             TaskCronerConfig[] data = restTemplate.getForObject(
-                    taskProperties.getTaskServerHost()
+                    taskProperties.getTaskCenterHost()
                             + "/taskapi/croner/config?taskPackage={taskPackage}&lastUpdateTime={lastUpdateTime}",
                     TaskCronerConfig[].class, taskPackage, lastUpdateTime);
             list = Arrays.asList(data);
@@ -230,7 +230,7 @@ public class TaskAPI {
     public void sendTaskCronerLog(long configId,TaskCronerLog taskCronerLog) {
         try {
             restTemplate.getForObject(
-                    taskProperties.getTaskServerHost()
+                    taskProperties.getTaskCenterHost()
                             + "/taskapi/croner/tick?id={id}&nextDate={nextDate}",
                     Integer.class, configId, taskCronerLog.getNextDate().getTime());
         } catch (Exception e) {
