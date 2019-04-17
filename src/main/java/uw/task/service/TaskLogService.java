@@ -168,43 +168,43 @@ public class TaskLogService {
             // 更新metric统计信息
             if (metrics[0] > 0) {
                 // 执行的总数量+1
-                taskMetricsService.runnerCounterAddAndGet(kv.getKey() + "." + "numAll", metrics[0]);
+                taskMetricsService.runnerCounterAddAndGet(kv.getKey() + ":" + "numAll", metrics[0]);
             }
             if (metrics[1] > 0) {
                 // 失败的总数量+1
-                taskMetricsService.runnerCounterAddAndGet(kv.getKey() + "." + "numFail", metrics[1]);
+                taskMetricsService.runnerCounterAddAndGet(kv.getKey() + ":" + "numFail", metrics[1]);
             }
             if (metrics[2] > 0) {
                 // 程序失败的总数量+1
-                taskMetricsService.runnerCounterAddAndGet(kv.getKey() + "." + "numFailProgram", metrics[2]);
+                taskMetricsService.runnerCounterAddAndGet(kv.getKey() + ":" + "numFailProgram", metrics[2]);
             }
             if (metrics[3] > 0) {
                 // 设置失败的总数量+1
-                taskMetricsService.runnerCounterAddAndGet(kv.getKey() + "." + "numFailConfig", metrics[3]);
+                taskMetricsService.runnerCounterAddAndGet(kv.getKey() + ":" + "numFailConfig", metrics[3]);
             }
             if (metrics[4] > 0) {
                 // 接口失败的总数量+1
-                taskMetricsService.runnerCounterAddAndGet(kv.getKey() + "." + "numFailPartner", metrics[4]);
+                taskMetricsService.runnerCounterAddAndGet(kv.getKey() + ":" + "numFailPartner", metrics[4]);
             }
             if (metrics[5] > 0) {
                 // 数据失败的总数量+1
-                taskMetricsService.runnerCounterAddAndGet(kv.getKey() + "." + "numFailData", metrics[5]);
+                taskMetricsService.runnerCounterAddAndGet(kv.getKey() + ":" + "numFailData", metrics[5]);
             }
             if (metrics[6] > 0) {
                 // 总消耗时间
-                taskMetricsService.runnerCounterAddAndGet(kv.getKey() + "." + "timeAll", metrics[6]);
+                taskMetricsService.runnerCounterAddAndGet(kv.getKey() + ":" + "timeAll", metrics[6]);
             }
             if (metrics[7] > 0) {
                 // 队列传输时间
-                taskMetricsService.runnerCounterAddAndGet(kv.getKey() + "." + "timeQueue", metrics[7]);
+                taskMetricsService.runnerCounterAddAndGet(kv.getKey() + ":" + "timeQueue", metrics[7]);
             }
             if (metrics[8] > 0) {
                 // 消费时间
-                taskMetricsService.runnerCounterAddAndGet(kv.getKey() + "." + "timeWait", metrics[8]);
+                taskMetricsService.runnerCounterAddAndGet(kv.getKey() + ":" + "timeWait", metrics[8]);
             }
             if (metrics[9] > 0) {
                 // 执行时间
-                taskMetricsService.runnerCounterAddAndGet(kv.getKey() + "." + "timeRun", metrics[9]);
+                taskMetricsService.runnerCounterAddAndGet(kv.getKey() + ":" + "timeRun", metrics[9]);
             }
         }
         // 写入日志服务器
@@ -305,35 +305,35 @@ public class TaskLogService {
             // 更新metric统计信息
             if (metrics[0] > 0) {
                 // 执行的总数量+1
-                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + "." + "numAll", metrics[0]);
+                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + ":" + "numAll", metrics[0]);
             }
             if (metrics[1] > 0) {
                 // 失败的总数量+1
-                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + "." + "numFail", metrics[1]);
+                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + ":" + "numFail", metrics[1]);
             }
             if (metrics[2] > 0) {
                 // 程序失败的总数量+1
-                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + "." + "numFailProgram", metrics[2]);
+                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + ":" + "numFailProgram", metrics[2]);
             }
             if (metrics[3] > 0) {
                 // 接口失败的总数量+1
-                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + "." + "numFailPartner", metrics[3]);
+                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + ":" + "numFailPartner", metrics[3]);
             }
             if (metrics[4] > 0) {
                 // 数据失败的总数量+1
-                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + "." + "numFailData", metrics[4]);
+                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + ":" + "numFailData", metrics[4]);
             }
             if (metrics[5] > 0) {
                 // 总消耗时间
-                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + "." + "timeAll", metrics[5]);
+                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + ":" + "timeAll", metrics[5]);
             }
             if (metrics[6] > 0) {
                 // 队列传输时间
-                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + "." + "timeWait", metrics[6]);
+                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + ":" + "timeWait", metrics[6]);
             }
             if (metrics[7] > 0) {
                 // 执行时间
-                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + "." + "timeRun", metrics[7]);
+                taskMetricsService.cronerCounterAddAndGet(kv.getKey() + ":" + "timeRun", metrics[7]);
             }
         }
         // 写入日志服务器

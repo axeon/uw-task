@@ -27,22 +27,22 @@ public class TaskMetricsService {
     /**
      * 用于统计Runner的Redis Key前缀
      */
-    private static final String METRICS_RUNNER_REDIS_TAG = "_METRICS_RUNNER_";
+    private static final String METRICS_RUNNER_REDIS_TAG = "MetricsRunner:";
 
     /**
      * 用于统计Croner的Redis Key前缀
      */
-    private static final String METRICS_CRONER_REDIS_TAG = "_METRICS_CRONER_";
+    private static final String METRICS_CRONER_REDIS_TAG = "MetricsCroner:";
 
     /**
      * runner数据表,与uw-task-server共享,于服务端统计,并提供查询接口
      */
-    private static final String METRICS_RUNNER_SET_REDIS_TAG = "_METRICS_RUNNER_runner_metrics";
+    private static final String METRICS_RUNNER_SET_REDIS_TAG = "MetricsRunnerSet";
 
     /**
      * runner数据表,与uw-task-server共享,于服务端统计,并提供查询接口
      */
-    private static final String METRICS_CRONER_SET_REDIS_TAG = "_METRICS_CRONER_croner_metrics";
+    private static final String METRICS_CRONER_SET_REDIS_TAG = "MetricsCronerSet";
 
     /**
      * Redis客户端

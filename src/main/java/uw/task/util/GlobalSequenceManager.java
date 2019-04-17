@@ -17,7 +17,7 @@ public class GlobalSequenceManager {
 
 	private static final Logger log = LoggerFactory.getLogger(GlobalSequenceManager.class);
 
-	private static final String REDIS_TAG = "_SEQUENCE_";
+	private static final String REDIS_TAG = "Sequence:";
 
     /**
      * 重试次数。
