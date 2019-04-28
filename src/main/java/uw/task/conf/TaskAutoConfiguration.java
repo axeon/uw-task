@@ -22,7 +22,6 @@ import org.springframework.boot.context.properties.PropertyMapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisPassword;
@@ -32,12 +31,10 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.client.RestTemplate;
-import uw.auth.client.AuthClientProperties;
 import uw.log.es.LogClient;
+import uw.task.TaskFactory;
 import uw.task.TaskListenerManager;
-import uw.task.TaskScheduler;
 import uw.task.api.TaskAPI;
 import uw.task.container.TaskCronerContainer;
 import uw.task.container.TaskRunnerContainer;
@@ -112,12 +109,12 @@ public class TaskAutoConfiguration {
      */
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Bean
-    public TaskScheduler taskScheduler(final ApplicationContext context,
-                                       final TaskProperties taskProperties,
-                                       @Qualifier("tokenRestTemplate") final RestTemplate restTemplate,
-                                       final TaskListenerManager taskListenerManager,
-                                       final ClientResources clientResources,
-                                       final LogClient logClient) {
+    public TaskFactory taskScheduler(final ApplicationContext context,
+                                     final TaskProperties taskProperties,
+                                     @Qualifier("tokenRestTemplate") final RestTemplate restTemplate,
+                                     final TaskListenerManager taskListenerManager,
+                                     final ClientResources clientResources,
+                                     final LogClient logClient) {
         // task自定义的rabbit连接工厂
         ConnectionFactory taskRabbitConnectionFactory = getTaskRabbitConnectionFactory(taskProperties.getRabbitmq());
         // task自定义的redis连接工厂
@@ -152,10 +149,10 @@ public class TaskAutoConfiguration {
         serverConfig = new TaskServerConfig(context, taskProperties, taskRabbitConnectionFactory,
                 taskRunnerContainer, taskCronerContainer, taskAPI, rabbitAdmin);
         // 返回TaskScheduler
-        TaskScheduler taskScheduler = new TaskScheduler(taskProperties, rabbitTemplate, taskRunnerContainer, globalSequenceManager);
+        TaskFactory taskFactory = new TaskFactory(taskProperties, rabbitTemplate, taskRunnerContainer, globalSequenceManager);
         // taskRunnerContainer错误重试需要TaskScheduler
-        taskRunnerContainer.setTaskScheduler(taskScheduler);
-        return taskScheduler;
+        taskRunnerContainer.setTaskFactory(taskFactory);
+        return taskFactory;
     }
 
     /**

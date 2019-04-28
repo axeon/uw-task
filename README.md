@@ -236,7 +236,7 @@ public class DemoTask extends TaskRunner<DemoTaskParam, String> {
 1. 定义TaskScheduler
 ```
 @Autowired
-private TaskScheduler taskScheduler;
+private TaskScheduler taskFactory;
 ```
 2. 发送任务到队列
 
