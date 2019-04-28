@@ -231,12 +231,12 @@ public class DemoTask extends TaskRunner<DemoTaskParam, String> {
 - 接口方异常为TaskPartnerException，此异常需要程序员手工抛出。一般http超时，返回码错误（非200）肯定要抛接口方异常的，其他可能为接口方异常的，可自行决断抛出。
 
 
-# 使用TaskScheduler发送任务到队列
+# 使用TaskFactory发送任务到队列
 
-1. 定义TaskScheduler
+1. 定义TaskFactory
 ```
 @Autowired
-private TaskScheduler taskFactory;
+private TaskFactory taskFactory;
 ```
 2. 发送任务到队列
 

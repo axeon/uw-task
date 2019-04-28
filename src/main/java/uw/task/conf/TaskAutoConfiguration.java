@@ -97,7 +97,7 @@ public class TaskAutoConfiguration {
     private ScheduledExecutorService scheduledExecutorService;
 
     /**
-     * 声明 taskScheduler bean
+     * 声明 TaskFactory bean
      *
      * @param context
      * @param taskProperties
@@ -109,7 +109,7 @@ public class TaskAutoConfiguration {
      */
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Bean
-    public TaskFactory taskScheduler(final ApplicationContext context,
+    public TaskFactory taskFactory(final ApplicationContext context,
                                      final TaskProperties taskProperties,
                                      @Qualifier("tokenRestTemplate") final RestTemplate restTemplate,
                                      final TaskListenerManager taskListenerManager,
