@@ -42,13 +42,14 @@ public class TaskRunnerConfig implements Serializable {
      * 限速类型：全局TAG限速
      */
     public static final int RATE_LIMIT_GLOBAL_TAG = 5;
+
     /**
      * 限速类型：全局TASK限速
      */
     public static final int RATE_LIMIT_GLOBAL_TASK = 6;
 
     /**
-     * 限速类型：全局TAG限速
+     * 限速类型：全局TAG+HOST限速
      */
     public static final int RATE_LIMIT_GLOBAL_TAG_HOST = 7;
 
