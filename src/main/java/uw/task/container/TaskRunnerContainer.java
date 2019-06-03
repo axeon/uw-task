@@ -107,40 +107,43 @@ public class TaskRunnerContainer {
         long noLimitFlag = 0;
         // 对于RPC调用和本地调用来说，不受任何流控限制。
         if (taskData.getRunType() != TaskData.RUN_TYPE_GLOBAL_RPC && taskData.getRunType() != TaskData.RUN_TYPE_LOCAL) {
-            if (taskConfig.getRateLimitType() != TaskRunnerConfig.RATE_LIMIT_TYPE_NONE) {
-                if (taskConfig.getRateLimitType() == TaskRunnerConfig.RATE_LIMIT_TYPE_PROCESS) {
+            if (taskConfig.getRateLimitType() != TaskRunnerConfig.RATE_LIMIT_NONE) {
+                if (taskConfig.getRateLimitType() == TaskRunnerConfig.RATE_LIMIT_LOCAL) {
                     // 进程内限制
-                    boolean flag = localRateLimiter.tryAcquire("", taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(),taskConfig.getRateLimitWait(), 1);
+                    boolean flag = localRateLimiter.tryAcquire("", taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(), taskConfig.getRateLimitWait(), 1);
                     noLimitFlag = flag ? 0 : -1;
-                } else if (taskConfig.getRateLimitType() == TaskRunnerConfig.RATE_LIMIT_TYPE_TASK_PROCESS) {
+                } else if (taskConfig.getRateLimitType() == TaskRunnerConfig.RATE_LIMIT_LOCAL_TASK) {
                     // 进程内+任务名限制
-                    boolean flag = localRateLimiter.tryAcquire(taskData.getTaskClass(), taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(),taskConfig.getRateLimitWait(), 1);
+                    boolean flag = localRateLimiter.tryAcquire(taskData.getTaskClass(), taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(), taskConfig.getRateLimitWait(), 1);
                     noLimitFlag = flag ? 0 : -1;
-                } else if (taskConfig.getRateLimitType() == TaskRunnerConfig.RATE_LIMIT_TYPE_TAG_PROCESS) {
+                } else if (taskConfig.getRateLimitType() == TaskRunnerConfig.RATE_LIMIT_LOCAL_TASK_TAG) {
                     // 进程内+任务名限制
-                    String locker = taskData.getTaskClass() + "$" + String.valueOf(taskData.getRateLimitTag());
-                    boolean flag = localRateLimiter.tryAcquire(locker, taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(),taskConfig.getRateLimitWait(), 1);
+                    String locker = taskData.getTaskClass() + "$" + taskData.getRateLimitTag();
+                    boolean flag = localRateLimiter.tryAcquire(locker, taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(), taskConfig.getRateLimitWait(), 1);
                     noLimitFlag = flag ? 0 : -1;
                 } else {
-                    String locker = taskData.getTaskClass();
+                    StringBuilder locker = new StringBuilder(50).append(taskData.getTaskClass());
                     switch (taskConfig.getRateLimitType()) {
-                        case TaskRunnerConfig.RATE_LIMIT_TYPE_TAG:
-                            locker = "$" + String.valueOf(taskData.getRateLimitTag());
+                        case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TAG:
+                            locker.append("$").append(taskData.getRateLimitTag());
                             break;
-                        case TaskRunnerConfig.RATE_LIMIT_TYPE_IP:
-                            locker = "$@" + taskAPI.getHostIp();
+                        case TaskRunnerConfig.RATE_LIMIT_GLOBAL_HOST:
+                            locker.append("$@").append(taskAPI.getHostIp());
                             break;
-                        case TaskRunnerConfig.RATE_LIMIT_TYPE_TASK:
-                            locker += "$";
+                        case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK:
+                            locker.append("$");
                             break;
-                        case TaskRunnerConfig.RATE_LIMIT_TYPE_TASK_TAG:
-                            locker += "$" + String.valueOf(taskData.getRateLimitTag());
+                        case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TAG_HOST:
+                            locker.append("$").append(taskData.getRateLimitTag()).append("@").append(taskAPI.getHostIp());
                             break;
-                        case TaskRunnerConfig.RATE_LIMIT_TYPE_TASK_IP:
-                            locker += "$@" + taskAPI.getHostIp();
+                        case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK_TAG:
+                            locker.append("$").append(taskData.getRateLimitTag());
                             break;
-                        case TaskRunnerConfig.RATE_LIMIT_TYPE_TAG_IP:
-                            locker = "$" + String.valueOf(taskData.getRateLimitTag()) + "@" + taskAPI.getHostIp();
+                        case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK_HOST:
+                            locker.append("$@").append(taskAPI.getHostIp());
+                            break;
+                        case TaskRunnerConfig.RATE_LIMIT_GLOBAL_TASK_TAG_HOST:
+                            locker.append("$").append(taskData.getRateLimitTag()).append("@").append(taskAPI.getHostIp());
                             break;
                     }
                     // 全局流量限制
@@ -148,7 +151,7 @@ public class TaskRunnerContainer {
                     // 开始进行延时等待
                     long end = System.currentTimeMillis() + taskConfig.getRateLimitWait() * 1000;
                     while (System.currentTimeMillis() <= end) {
-                        noLimitFlag = globalRateLimiter.tryAcquire(locker,taskConfig.getRateLimitValue(),taskConfig.getRateLimitTime(),1);
+                        noLimitFlag = globalRateLimiter.tryAcquire(locker.toString(), taskConfig.getRateLimitValue(), taskConfig.getRateLimitTime(), 1);
                         if (noLimitFlag == 0) {
                             break;
                         }
