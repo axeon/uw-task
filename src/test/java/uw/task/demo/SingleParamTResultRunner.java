@@ -22,7 +22,7 @@ public class SingleParamTResultRunner extends SingleParamTResultBaseRunner {
         TaskMessageConverter.constructTaskDataType("uw.task.demo.SingleParamTResultRunner",runner);
 
         MessageProperties properties = new MessageProperties();
-        Message message = converter.createMessage(taskData,properties);
+        Message message = converter.toMessage(taskData,properties);
 
         TaskData<String, MyReturnData> fromData = (TaskData<String, MyReturnData>)converter.fromMessage(message);
         String param = fromData.getTaskParam();

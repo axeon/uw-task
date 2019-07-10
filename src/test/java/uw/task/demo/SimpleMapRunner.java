@@ -25,7 +25,7 @@ public class SimpleMapRunner extends SimpleBaseMapRunner {
         TaskMessageConverter.constructTaskDataType("uw.task.demo.SimpleMapRunner",runner);
 
         MessageProperties properties = new MessageProperties();
-        Message message = converter.createMessage(taskData,properties);
+        Message message = converter.toMessage(taskData,properties);
 
         TaskData<Map<String, String>, Map<String, String>> fromData = (TaskData<Map<String, String>, Map<String, String>>)converter.fromMessage(message);
         Map<String, String> param = fromData.getTaskParam();

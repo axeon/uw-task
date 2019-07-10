@@ -39,7 +39,7 @@ public class SimpleRunner extends SimpleBaseRunner {
         TaskMessageConverter.constructTaskDataType("uw.task.demo.SimpleRunner",runner);
 
         MessageProperties properties = new MessageProperties();
-        Message message = converter.createMessage(taskData,properties);
+        Message message = converter.toMessage(taskData,properties);
 
         TaskData<String, String> fromData = (TaskData<String, String>)converter.fromMessage(message);
         String param = fromData.getTaskParam();

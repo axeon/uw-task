@@ -37,7 +37,7 @@ public class ProductGetRunnerTest {
         TaskMessageConverter.constructTaskDataType("zwy.saas.hotel.task.supplier.meituan.runner.ProductGetRunner",runner);
 
         MessageProperties properties = new MessageProperties();
-        Message message = converter.createMessage(taskData,properties);
+        Message message = converter.toMessage(taskData,properties);
 
         TaskData<ProductGetParam, ResponseData<List<HotelProductAndRoom>>> fromData =
                 (TaskData<ProductGetParam, ResponseData<List<HotelProductAndRoom>>> )converter.fromMessage(message);

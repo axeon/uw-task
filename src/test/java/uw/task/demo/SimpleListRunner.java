@@ -26,7 +26,7 @@ public class SimpleListRunner extends SimpleBaseListRunner {
         TaskMessageConverter.constructTaskDataType("uw.task.demo.SimpleListRunner",runner);
 
         MessageProperties properties = new MessageProperties();
-        Message message = converter.createMessage(taskData,properties);
+        Message message = converter.toMessage(taskData,properties);
 
         TaskData<List<String>, List<String>> fromData = (TaskData<List<String>, List<String>>)converter.fromMessage(message);
         List<String> param = fromData.getTaskParam();

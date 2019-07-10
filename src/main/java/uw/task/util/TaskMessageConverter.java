@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
-import org.springframework.amqp.support.converter.AbstractJsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConversionException;
 import org.springframework.amqp.support.converter.SmartMessageConverter;
 import org.springframework.core.ParameterizedTypeReference;
@@ -27,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author axeon
  */
-public class TaskMessageConverter extends AbstractJsonMessageConverter implements SmartMessageConverter {
+public class TaskMessageConverter implements SmartMessageConverter {
 
     /**
      * 数据类型
@@ -155,9 +154,23 @@ public class TaskMessageConverter extends AbstractJsonMessageConverter implement
         return jsonObjectMapper.getTypeFactory().constructType(type);
     }
 
+
     @Override
-    public void setBeanClassLoader(ClassLoader classLoader) {
-        super.setBeanClassLoader(classLoader);
+    public Message toMessage(Object objectToConvert, MessageProperties messageProperties) throws MessageConversionException {
+        byte[] bytes = new byte[0];
+        if (objectToConvert instanceof TaskData) {
+            @SuppressWarnings("rawtypes")
+            TaskData taskData = (TaskData) objectToConvert;
+            messageProperties.getHeaders().put(CONTENT_TYPE_TASK_CLASS, taskData.getTaskClass());
+            messageProperties.setContentType(CONTENT_TYPE_TASK_DATA);
+            try {
+                bytes = jsonObjectMapper.writeValueAsBytes(objectToConvert);
+            } catch (IOException e) {
+                throw new MessageConversionException("Failed to convert Message content", e);
+            }
+        }
+        messageProperties.setContentLength(bytes.length);
+        return new Message(bytes, messageProperties);
     }
 
     @Override
@@ -185,7 +198,7 @@ public class TaskMessageConverter extends AbstractJsonMessageConverter implement
             if (log.isWarnEnabled()) {
                 try {
                     log.warn("Could not convert incoming message with content-type [{}],message: {} ",
-                            contentType,new String(message.getBody(),"UTF-8"));
+                            contentType, new String(message.getBody(), "UTF-8"));
                 } catch (Exception e) {
                     log.warn("Could not convert incoming message with content-type [{}],message cannot be decode. ",
                             contentType);
@@ -227,7 +240,7 @@ public class TaskMessageConverter extends AbstractJsonMessageConverter implement
             if (log.isWarnEnabled()) {
                 try {
                     log.warn("Could not convert incoming message with content-type [{}],message: {} ",
-                            contentType,new String(message.getBody(),"UTF-8"));
+                            contentType, new String(message.getBody(), "UTF-8"));
                 } catch (Exception e) {
                     log.warn("Could not convert incoming message with content-type [{}],message cannot be decode. ",
                             contentType);
@@ -235,25 +248,6 @@ public class TaskMessageConverter extends AbstractJsonMessageConverter implement
             }
         }
         return content;
-    }
-
-    @Override
-    public Message createMessage(Object objectToConvert, MessageProperties messageProperties)
-            throws MessageConversionException {
-        byte[] bytes = new byte[0];
-        if (objectToConvert instanceof TaskData) {
-            @SuppressWarnings("rawtypes")
-            TaskData taskData = (TaskData) objectToConvert;
-            messageProperties.getHeaders().put(CONTENT_TYPE_TASK_CLASS, taskData.getTaskClass());
-            messageProperties.setContentType(CONTENT_TYPE_TASK_DATA);
-            try {
-                bytes = jsonObjectMapper.writeValueAsBytes(objectToConvert);
-            } catch (IOException e) {
-                throw new MessageConversionException("Failed to convert Message content", e);
-            }
-        }
-        messageProperties.setContentLength(bytes.length);
-        return new Message(bytes, messageProperties);
     }
 
 }
