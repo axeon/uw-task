@@ -60,17 +60,17 @@ public class TaskProperties {
     /**
      * 任务服务器
      */
-    private String taskCenterHost;
+    private String taskCenterHost = "127.0.0.1";
 
     /**
      * Redis配置
      */
-    private RedisProperties redis;
+    private RedisProperties redis = new RedisProperties();
 
     /**
      * Rabbit MQ配置
      */
-    private RabbitProperties rabbitmq;
+    private RabbitProperties rabbitmq = new RabbitProperties();
 
     public static class RedisProperties extends org.springframework.boot.autoconfigure.data.redis.RedisProperties {
 
