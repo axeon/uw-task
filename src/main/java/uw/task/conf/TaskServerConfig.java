@@ -114,9 +114,10 @@ public class TaskServerConfig {
 
     /**
      * 是否开启任务注册。
+     *
      * @return
      */
-    public boolean isEnableTaskRegistry(){
+    public boolean isEnableTaskRegistry() {
         return taskProperties.isEnableTaskRegistry();
     }
 
@@ -153,7 +154,7 @@ public class TaskServerConfig {
         if (!taskProperties.isEnableTaskRegistry()) {
             return;
         }
-        long startUpdateTimeMilles = System.currentTimeMillis();
+        long startUpdateTimeMills = System.currentTimeMillis();
 
         // 先拉主机配置，因为taskScheduler调用需要
         if (log.isDebugEnabled()) {
@@ -164,7 +165,7 @@ public class TaskServerConfig {
         // 取得有变化的croner配置列表
         ConcurrentHashMap<String, TaskCronerConfig> updatedCronerConfigMap = updateCronerConfig();
         if (!updateFlag) {
-            log.error("拉取Croner服务器配置失败，进入fail-fast模式!");
+            log.error("拉取TaskCroner服务器配置失败，进入Fail-Fast模式!");
             updateFlag = true;
             return;
         }
@@ -174,7 +175,7 @@ public class TaskServerConfig {
         // 取得有变化的runner配置列表
         ConcurrentHashMap<String, TaskRunnerConfig> updatedRunnerConfigMap = updateRunnerConfig();
         if (!updateFlag) {
-            log.error("拉取Runner服务器配置失败，进入fail-fast模式!");
+            log.error("拉取TaskRunner服务器配置失败，进入Fail-Fast模式!");
             updateFlag = true;
             return;
         }
@@ -188,7 +189,7 @@ public class TaskServerConfig {
                 if (!newTargetConfig.contains(config)) {
                     // 这个需要删除掉队列监听了。
                     if (log.isDebugEnabled()) {
-                        log.debug("正在删除主机配置[{}]对应的队列监听...", config);
+                        log.debug("正在删除主机配置: [{}]对应的队列监听...", config);
                     }
                     try {
                         for (Entry<String, SimpleMessageListenerContainer> kv : runnerContainerMap.entrySet()) {
@@ -207,7 +208,7 @@ public class TaskServerConfig {
         for (String host : newTargetConfig) {
             if (TaskMetaInfoManager.targetConfig != null && !TaskMetaInfoManager.targetConfig.contains(host)) {
                 if (log.isDebugEnabled()) {
-                    log.debug("正在新建主机配置[{}]对应的队列监听...", host);
+                    log.debug("正在新建主机配置: [{}]对应的队列监听...", host);
                 }
                 // 让croner&runner重新加载。
                 updatedCronerConfigMap = TaskMetaInfoManager.cronerConfigMap;
@@ -228,12 +229,12 @@ public class TaskServerConfig {
                     TaskCroner tc = kv.getValue();
                     String taskClass = tc.getClass().getName();
                     if (log.isDebugEnabled()) {
-                        log.debug("正在初始化croner:{}", taskClass);
+                        log.debug("正在初始化TaskCroner: [{}]", taskClass);
                     }
                     TaskCronerConfig localConfig = tc.initConfig();
                     TaskContact contact = tc.initContact();
                     if (localConfig == null || contact == null) {
-                        log.error("TaskCroner:[{}]默认配置或联系人信息为空，无法启动！", taskClass);
+                        log.error("TaskCroner: [{}]默认配置或联系人信息为空，无法启动！", taskClass);
                         continue;
                     }
                     // 防止有人瞎胡搞
@@ -245,7 +246,7 @@ public class TaskServerConfig {
                     // 上传配置
                     if (serverConfig == null) {
                         if (log.isDebugEnabled()) {
-                            log.debug("TaskCroner:[{}]未找到服务器端配置，上传默认配置...", taskClass);
+                            log.debug("TaskCroner: [{}]未找到服务器端配置，上传默认配置...", taskClass);
                         }
                         serverConfig = uploadCronerInfo(localConfig, contact);
                     }
@@ -263,8 +264,11 @@ public class TaskServerConfig {
                     TaskRunnerConfig localConfig = tr.initConfig();
                     TaskContact contact = tr.initContact();
                     if (localConfig == null || contact == null) {
-                        log.error("TaskRunner:[{}]默认配置或联系人信息为空，无法启动！", taskClass);
+                        log.error("TaskRunner: [{}]默认配置或联系人信息为空，无法启动！", taskClass);
                         continue;
+                    }
+                    if (log.isDebugEnabled()) {
+                        log.debug("正在初始化TaskRunner: [{}]", taskClass);
                     }
                     localConfig.setTaskClass(taskClass);
                     contact.setTaskClass(taskClass);
@@ -273,7 +277,7 @@ public class TaskServerConfig {
                     // 上传配置
                     if (serverConfig == null) {
                         if (log.isDebugEnabled()) {
-                            log.debug("TaskRunner:[{}]未找到服务器端配置，上传默认配置...", taskClass);
+                            log.debug("TaskRunner: [{}]未找到服务器端配置，上传默认配置...", taskClass);
                         }
                         serverConfig = uploadRunnerInfo(localConfig, contact);
                     }
@@ -291,8 +295,12 @@ public class TaskServerConfig {
         // 此时执行更新操作
         if (updatedCronerConfigMap != null) {
             for (TaskCronerConfig tcc : updatedCronerConfigMap.values()) {
+                //必须是本项目任务，否则跳过
+                if (!tcc.getTaskClass().startsWith(taskProperties.getProject())) {
+                    continue;
+                }
                 if (log.isDebugEnabled()) {
-                    log.debug("正在加载ID:{},CRONER:{},CRON:{},", tcc.getId(), tcc.getTaskClass(), tcc.getTaskCron());
+                    log.debug("正在加载ID: [{}],TaskCroner: [{}],CRON: [{}],", tcc.getId(), tcc.getTaskClass(), tcc.getTaskCron());
                 }
                 TaskCroner tc = TaskMetaInfoManager.cronerMap.get(tcc.getTaskClass());
                 if (tc != null) {
@@ -303,33 +311,40 @@ public class TaskServerConfig {
                         }
                         taskCronerContainer.configureTask(tc, tcc);
                         if (log.isDebugEnabled()) {
-                            log.debug("TaskCroner:[{}]正在设定新配置...", TaskMetaInfoManager.getCronerConfigKey(tcc));
+                            log.debug("TaskCroner: [{}]正在设定新配置...", TaskMetaInfoManager.getCronerConfigKey(tcc));
                         }
                     } catch (Exception e) {
                         log.error(e.getMessage(), e);
                     }
                 } else {
-                    log.warn("TaskCroner:[{}]更新配置时，未找到匹配的任务类!", tcc.getTaskClass());
+                    log.warn("TaskCroner: [{}]更新配置时，未找到匹配的任务类!", tcc.getTaskClass());
                 }
             }
         }
         // 改Runner配置，逐一循环并配置。
         if (updatedRunnerConfigMap != null) {
             for (TaskRunnerConfig trc : updatedRunnerConfigMap.values()) {
+                //必须是本项目任务，否则跳过
+                if (!trc.getTaskClass().startsWith(taskProperties.getProject())) {
+                    continue;
+                }
+                if (log.isDebugEnabled()) {
+                    log.debug("正在加载ID: [{}], TaskRunner: [{}]", trc.getId(), trc.getTaskClass());
+                }
                 if (TaskMetaInfoManager.runnerMap.containsKey(trc.getTaskClass())) {
                     // 启动任务
                     if (TaskMetaInfoManager.targetConfig.contains(trc.getRunTarget())) {
                         registerRunner(trc);
                     }
                 } else {
-                    log.warn("TaskRunner:[{}]更新配置时，未找到匹配的任务类!", trc.getTaskClass());
+                    log.warn("TaskRunner: [{}]更新配置时，未找到匹配的任务类!", trc.getTaskClass());
                 }
             }
         }
         // 执行成功才会更新时间戳
         if (updateFlag) {
             // 比对数据库的时候，因为数据库缺少ms值，所以减去5000，提高匹配度。
-            lastUpdateTime = startUpdateTimeMilles - 5000;
+            lastUpdateTime = startUpdateTimeMills - 5000;
         }
         // 最后重置一下状态为成功。
         updateFlag = true;
@@ -438,11 +453,11 @@ public class TaskServerConfig {
         String queueName = TaskMetaInfoManager.getRunnerConfigKey(runnerConfig);
         SimpleMessageListenerContainer sysContainer = runnerContainerMap.computeIfAbsent(queueName, key -> {
             if (runnerConfig.getState() != 1) {
-                log.warn("TaskRunner:[{}]状态为暂停，不进行注册。。。", queueName);
+                log.warn("TaskRunner: [{}]状态为暂停，不进行注册。。。", queueName);
                 return null;
             }
             if (log.isDebugEnabled()) {
-                log.debug("TaskRunner:[{}]正在注册并启动监听...", queueName);
+                log.debug("TaskRunner: [{}]正在注册并启动监听...", queueName);
             }
             try {
                 // 定义队列

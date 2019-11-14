@@ -149,7 +149,7 @@ public class TaskAPI {
     }
 
     /**
-     * 根据包名前缀获得TaskRunner队列列表。
+     * 根据更新时间获得变化的TaskRunner队列列表。
      *
      * @param lastUpdateTime 最后更新时间
      * @return
