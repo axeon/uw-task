@@ -81,8 +81,9 @@ public class TaskFactory {
         taskData.setId(globalSequenceManager.nextId("task_runner_log"));
         taskData.setQueueDate(new Date());
         taskData.setRunType(TaskData.RUN_TYPE_GLOBAL);
-        Message msg = rabbitTemplate.getMessageConverter().toMessage(taskData, new MessageProperties());
-        msg.getMessageProperties().setConsumerQueue(TaskMetaInfoManager.getFitQueue(taskData));
+        MessageProperties messageProperties= new MessageProperties();
+        messageProperties.setConsumerQueue(TaskMetaInfoManager.getFitQueue(taskData));
+        Message msg = rabbitTemplate.getMessageConverter().toMessage(taskData, messageProperties);
         return msg;
     }
 
@@ -107,12 +108,12 @@ public class TaskFactory {
             return taskData;
         } else {
             taskData.setRunType(TaskData.RUN_TYPE_GLOBAL_RPC);
-            Message message = rabbitTemplate.getMessageConverter().toMessage(taskData, new MessageProperties());
             //加入优先级信息。
-            MessageProperties mp = message.getMessageProperties();
-            mp.setPriority(10);
-            mp.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
-            mp.setExpiration("180000");
+            MessageProperties messageProperties= new MessageProperties();
+            messageProperties.setPriority(10);
+            messageProperties.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
+            messageProperties.setExpiration("180000");
+            Message message = rabbitTemplate.getMessageConverter().toMessage(taskData, messageProperties);
             // 全局运行模式
             String queue = TaskMetaInfoManager.getFitQueue(taskData);
             Message retMessage = rabbitTemplate.sendAndReceive(queue, queue, message);
@@ -171,12 +172,12 @@ public class TaskFactory {
         } else {
             // 全局运行模式
             taskData.setRunType(TaskData.RUN_TYPE_GLOBAL_RPC);
-            Message message = rabbitTemplate.getMessageConverter().toMessage(taskData, new MessageProperties());
             //加入优先级信息。
-            MessageProperties mp = message.getMessageProperties();
-            mp.setPriority(10);
-            mp.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
-            mp.setExpiration("180000");
+            MessageProperties messageProperties= new MessageProperties();
+            messageProperties.setPriority(10);
+            messageProperties.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
+            messageProperties.setExpiration("180000");
+            Message message = rabbitTemplate.getMessageConverter().toMessage(taskData, messageProperties);
             String queue = TaskMetaInfoManager.getFitQueue(taskData);
             return taskRpcService.submit(() -> {
                 Message retMessage = rabbitTemplate.sendAndReceive(queue, queue, message);

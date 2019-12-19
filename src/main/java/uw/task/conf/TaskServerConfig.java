@@ -475,13 +475,10 @@ public class TaskServerConfig {
                 container.setAcknowledgeMode(AcknowledgeMode.AUTO);
                 container.setQueueNames(queueName);
                 MessageListenerAdapter listenerAdapter = new MessageListenerAdapter(taskRunnerContainer, "process");
-                // listenerAdapter.setReplyPostProcessor(new
-                // GZipPostProcessor());
+                // listenerAdapter.setReplyPostProcessor(new GZipPostProcessor());
                 listenerAdapter.setMessageConverter(new TaskMessageConverter());
                 container.setMessageListener(listenerAdapter);
-                container.setMessageConverter(new TaskMessageConverter());
-                // container.setAfterReceivePostProcessors(new
-                // GUnzipPostProcessor());
+                // container.setAfterReceivePostProcessors(new GUnzipPostProcessor());
                 container.setAutoStartup(true);
                 container.afterPropertiesSet();
                 container.start();
