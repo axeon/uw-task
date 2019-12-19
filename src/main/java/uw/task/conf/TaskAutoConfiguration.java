@@ -186,12 +186,12 @@ public class TaskAutoConfiguration {
             //task自持任务
             if (serverConfig.isEnableTaskRegistry()) {
                 scheduledExecutorService = Executors.newScheduledThreadPool(3,
-                        new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskSelf-%d").build());
+                        new ThreadFactoryBuilder().setDaemon(true).setNameFormat("uw-task-service-%d").build());
                 scheduledExecutorService.scheduleAtFixedRate(() -> serverConfig.updateConfig(), 0, 30, TimeUnit.SECONDS);
                 scheduledExecutorService.scheduleAtFixedRate(() -> leaderVote.batchCheckLeaderStatus(), 0, 60, TimeUnit.SECONDS);
             } else {
                 scheduledExecutorService = Executors.newScheduledThreadPool(1,
-                        new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskSelf-%d").build());
+                        new ThreadFactoryBuilder().setDaemon(true).setNameFormat("uw-task-service-%d").build());
             }
             scheduledExecutorService.scheduleAtFixedRate(() -> serverConfig.loadSysQueue(), 0, 60, TimeUnit.SECONDS);
         }

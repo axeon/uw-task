@@ -9,6 +9,7 @@ import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.ChannelCallback;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import uw.task.conf.TaskMetaInfoManager;
 import uw.task.conf.TaskProperties;
@@ -80,11 +81,12 @@ public class TaskFactory {
                     Thread.sleep(i * 500);
                 }
                 rabbitTemplate.send(queue, queue, message);
-                break;
+                return;
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
             }
         }
+        throw new TaskRuntimeException("The channelMax limit is reached!");
     }
 
     /**
@@ -144,7 +146,7 @@ public class TaskFactory {
                     log.error(e.getMessage(), e);
                 }
             }
-            return null;
+            throw new TaskRuntimeException("The channelMax limit is reached!");
         }
     }
 
@@ -219,7 +221,7 @@ public class TaskFactory {
                         log.error(e.getMessage(), e);
                     }
                 }
-                return null;
+                throw new TaskRuntimeException("The channelMax limit is reached!");
             });
         }
     }
@@ -237,6 +239,19 @@ public class TaskFactory {
             }
         });
         return new int[]{declareOk.getMessageCount(), declareOk.getConsumerCount()};
+    }
+
+    /**
+     * 清除队列。
+     *
+     * @param queueName
+     * @return 被清除的队列数
+     */
+    public int purgeQueue(String queueName) {
+        return this.rabbitTemplate.execute(channel -> {
+            AMQP.Queue.PurgeOk queuePurged = channel.queuePurge(queueName);
+            return queuePurged.getMessageCount();
+        });
     }
 
 }
