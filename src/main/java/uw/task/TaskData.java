@@ -21,33 +21,33 @@ public class TaskData<TP, RD> implements Serializable {
     /**
      * 任务状态:未设置
      */
-    public static final int STATUS_UNKNOW = 0;
+    public static final int STATE_UNKNOWN = 0;
 
     /**
      * 任务状态:成功
      */
-    public static final int STATUS_SUCCESS = 1;
+    public static final int STATE_SUCCESS = 1;
 
     /**
      * 任务状态:程序错误
      */
-    public static final int STATUS_FAIL_PROGRAM = 2;
+    public static final int STATE_FAIL_PROGRAM = 2;
 
     /**
      * 任务状态:配置错误，如超过流量限制
      */
-    public static final int STATUS_FAIL_CONFIG = 3;
+    public static final int STATE_FAIL_CONFIG = 3;
 
     /**
      * 任务状态:第三方接口错误
      */
-    public static final int STATUS_FAIL_PARTNER = 4;
+    public static final int STATE_FAIL_PARTNER = 4;
 
     /**
      * 任务状态:数据错误
      */
-    public static final int STATUS_FAIL_DATA = 5;
-    
+    public static final int STATE_FAIL_DATA = 5;
+
     /**
      * 运行模式：本地运行
      */
@@ -62,7 +62,7 @@ public class TaskData<TP, RD> implements Serializable {
      * 运行模式：全局运行RPC返回结果
      */
     public static final int RUN_TYPE_GLOBAL_RPC = 5;
-    
+
     /**
      * 运行模式：自动运行RPC返回结果，使用此模式，会自动选择本地还远程运行模式。
      */
@@ -77,12 +77,12 @@ public class TaskData<TP, RD> implements Serializable {
      * 用户手工重试
      */
     public static final int RETRY_TYPE_MANUAL = 1;
-    
+
     /**
      * id，此序列值由框架自动生成，无需手工设置。
      */
     private long id;
-    
+
     /**
      * 关联TAG，由调用方设定，用于第三方统计信息。
      */
@@ -108,7 +108,7 @@ public class TaskData<TP, RD> implements Serializable {
      * 流量限制TAG。
      */
     private String rateLimitTag;
-    
+
     /**
      * 需要执行的类名，此数值必须由调用方设置。
      */
@@ -118,12 +118,12 @@ public class TaskData<TP, RD> implements Serializable {
      * 任务标签，用于细分任务队列，支持多实例运行。
      */
     private String taskTag = "";
-    
+
     /**
      * 任务延迟毫秒数。一般这个时间不宜太长，大多数情况下不要超过60秒。
      */
     private long taskDelay;
-    
+
     /**
      * 执行参数，此数值必须有调用方设置。
      */

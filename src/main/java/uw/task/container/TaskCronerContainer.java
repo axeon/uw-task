@@ -148,20 +148,20 @@ public class TaskCronerContainer {
 
                 try {
                     data = croner.runTask(taskCronerLog);
-                    taskCronerLog.setState(TaskData.STATUS_SUCCESS);
+                    taskCronerLog.setState(TaskData.STATE_SUCCESS);
                 } catch (TaskPartnerException e) {
                     // 出现TaskDataException，说明是数据错误。
-                    taskCronerLog.setState(TaskData.STATUS_FAIL_PARTNER);
+                    taskCronerLog.setState(TaskData.STATE_FAIL_PARTNER);
                     data = MiscUtils.exceptionToString(e);
                     log.error(e.getMessage(), e);
                 } catch (TaskDataException e) {
                     // 出现TaskPartnerException，说明是合作方的错误。
-                    taskCronerLog.setState(TaskData.STATUS_FAIL_DATA);
+                    taskCronerLog.setState(TaskData.STATE_FAIL_DATA);
                     data = MiscUtils.exceptionToString(e);
                     log.error(e.getMessage(), e);
                 } catch (Exception e) {
                     data = MiscUtils.exceptionToString(e);
-                    taskCronerLog.setState(TaskData.STATUS_FAIL_PROGRAM);
+                    taskCronerLog.setState(TaskData.STATE_FAIL_PROGRAM);
                     log.error(e.getMessage(), e);
                 }
                 // 执行监听器操作

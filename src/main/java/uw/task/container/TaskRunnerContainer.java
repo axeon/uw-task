@@ -188,20 +188,20 @@ public class TaskRunnerContainer {
             try {
                 // 执行任务
                 taskData.setResultData(taskRunner.runTask(taskData));
-                taskData.setState(TaskData.STATUS_SUCCESS);
+                taskData.setState(TaskData.STATE_SUCCESS);
             } catch (TaskDataException e) {
                 // 出现TaskDataException，说明是数据错误。
-                taskData.setState(TaskData.STATUS_FAIL_DATA);
+                taskData.setState(TaskData.STATE_FAIL_DATA);
                 taskData.setErrorInfo(MiscUtils.exceptionToString(e));
                 log.error(e.getMessage(), e);
             } catch (TaskPartnerException e) {
                 // 出现TaskPartnerException，说明是合作方的错误。
-                taskData.setState(TaskData.STATUS_FAIL_PARTNER);
+                taskData.setState(TaskData.STATE_FAIL_PARTNER);
                 taskData.setErrorInfo(MiscUtils.exceptionToString(e));
                 log.error(e.getMessage(), e);
             } catch (Throwable e) {
                 // 设置异常状态
-                taskData.setState(TaskData.STATUS_FAIL_PROGRAM);
+                taskData.setState(TaskData.STATE_FAIL_PROGRAM);
                 // 设置异常信息，自动屏蔽spring自己的输出。
                 taskData.setErrorInfo(MiscUtils.exceptionToString(e));
                 log.error(e.getMessage(), e);
@@ -219,7 +219,7 @@ public class TaskRunnerContainer {
         } else {
             taskData.setErrorInfo("RateLimit!!!" + taskConfig.getRateLimitValue() + "/" + taskConfig.getRateLimitTime()
                     + "s, Wait " + taskConfig.getRateLimitWait() + "s!");
-            taskData.setState(TaskData.STATUS_FAIL_CONFIG);
+            taskData.setState(TaskData.STATE_FAIL_CONFIG);
         }
 
         // 不管如何，都给设定结束日期。
@@ -236,14 +236,14 @@ public class TaskRunnerContainer {
         if (taskData.getRunType() == TaskData.RUN_TYPE_GLOBAL_RPC || taskData.getRunType() == TaskData.RUN_TYPE_LOCAL) {
             // 如果异常，根据任务设置，重新跑
             if (taskData.getRetryType() == TaskData.RETRY_TYPE_AUTO) {
-                if (taskData.getState() > TaskData.STATUS_SUCCESS) {
+                if (taskData.getState() > TaskData.STATE_SUCCESS) {
                     //设置任务延时，原计划使用Math.pow(2,x)的，后来决定不用了
                     taskData.setTaskDelay(taskData.getRanTimes() * taskProperties.getTaskRpcRetryDelay());
-                    if (taskData.getState() == TaskData.STATUS_FAIL_CONFIG) {
+                    if (taskData.getState() == TaskData.STATE_FAIL_CONFIG) {
                         if (taskData.getRanTimes() < taskConfig.getRetryTimesByOverrated()) {
                             taskData = taskFactory.runTaskLocal(cleanTaskInfo(taskData));
                         }
-                    } else if (taskData.getState() == TaskData.STATUS_FAIL_PARTNER) {
+                    } else if (taskData.getState() == TaskData.STATE_FAIL_PARTNER) {
                         if (taskData.getRanTimes() < taskConfig.getRetryTimesByPartner()) {
                             taskData = taskFactory.runTaskLocal(cleanTaskInfo(taskData));
                         }
@@ -254,14 +254,14 @@ public class TaskRunnerContainer {
         } else {
             // 如果异常，根据任务设置，重新跑
             if (taskData.getRetryType() == TaskData.RETRY_TYPE_AUTO) {
-                if (taskData.getState() > TaskData.STATUS_SUCCESS) {
+                if (taskData.getState() > TaskData.STATE_SUCCESS) {
                     //设置任务延时，原计划使用Math.pow(2,x)的，后来决定不用了
                     taskData.setTaskDelay(taskData.getRanTimes() * taskProperties.getTaskQueueRetryDelay());
-                    if (taskData.getState() == TaskData.STATUS_FAIL_CONFIG) {
+                    if (taskData.getState() == TaskData.STATE_FAIL_CONFIG) {
                         if (taskData.getRanTimes() < taskConfig.getRetryTimesByOverrated()) {
                             taskFactory.sendToQueue(cleanTaskInfo(taskData));
                         }
-                    } else if (taskData.getState() == TaskData.STATUS_FAIL_PARTNER) {
+                    } else if (taskData.getState() == TaskData.STATE_FAIL_PARTNER) {
                         if (taskData.getRanTimes() < taskConfig.getRetryTimesByPartner()) {
                             taskFactory.sendToQueue(cleanTaskInfo(taskData));
                         }
@@ -289,7 +289,7 @@ public class TaskRunnerContainer {
         taskData.setFinishDate(null);
         taskData.setResultData(null);
         taskData.setErrorInfo(null);
-        taskData.setState(TaskData.STATUS_UNKNOW);
+        taskData.setState(TaskData.STATE_UNKNOWN);
         return taskData;
     }
 

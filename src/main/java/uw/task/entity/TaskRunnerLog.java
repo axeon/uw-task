@@ -95,27 +95,21 @@ public class TaskRunnerLog extends LogBaseVo {
         Object value = taskData.getTaskParam();
         if (value != null) {
             // 报错了
-            if (taskData.getErrorInfo() != null) {
-                try {
-                    return JsonMapper.MAPPER.writeValueAsString(value);
-                } catch (Exception e) {
-                    logger.error(e.getMessage(), e);
-                }
-            } else if (logLevel == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_ALL ||
+            if (taskData.getState() != TaskData.STATE_SUCCESS || logLevel == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_ALL ||
                     logLevel == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_TASK_PARAM) {
-                String taskParam = null;
+                String data = null;
                 try {
-                    taskParam = JsonMapper.MAPPER.writeValueAsString(value);
+                    data = JsonMapper.MAPPER.writeValueAsString(value);
                 } catch (Exception e) {
+                    data = e.getMessage();
                     logger.error(e.getMessage(), e);
                 }
-                if (taskParam != null) {
-                    if (logLimitSize > 0 && taskParam.length() > logLimitSize) {
-                        taskParam = taskParam.substring(0, logLimitSize);
+                if (data != null) {
+                    if (logLimitSize > 0 && data.length() > logLimitSize) {
+                        data = data.substring(0, logLimitSize);
                     }
-                    return taskParam;
+                    return data;
                 }
-                return "JSON序列化出错,请注意排查程序: task_class = " + getTaskClass();
             }
         }
         return null;
@@ -191,27 +185,21 @@ public class TaskRunnerLog extends LogBaseVo {
         Object value = taskData.getResultData();
         if (value != null) {
             // 报错了
-            if (taskData.getErrorInfo() != null) {
-                try {
-                    return JsonMapper.MAPPER.writeValueAsString(value);
-                } catch (Exception e) {
-                    logger.error(e.getMessage(), e);
-                }
-            } else if (logLevel == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_ALL ||
+            if (taskData.getState() != TaskData.STATE_SUCCESS || logLevel == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_ALL ||
                     logLevel == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_RESULT_DATA) {
-                String resultData = null;
+                String data = null;
                 try {
-                    resultData = JsonMapper.MAPPER.writeValueAsString(value);
+                    data = JsonMapper.MAPPER.writeValueAsString(value);
                 } catch (Exception e) {
+                    data = e.getMessage();
                     logger.error(e.getMessage(), e);
                 }
-                if (resultData != null) {
-                    if (logLimitSize > 0 && resultData.length() > logLimitSize) {
-                        resultData = resultData.substring(0, logLimitSize);
+                if (data != null) {
+                    if (logLimitSize > 0 && data.length() > logLimitSize) {
+                        data = data.substring(0, logLimitSize);
                     }
-                    return resultData;
+                    return data;
                 }
-                return "JSON序列化出错,请注意排查程序: task_class = " + getTaskClass();
             }
         }
         return null;

@@ -2,6 +2,8 @@ package uw.task.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import uw.log.es.vo.LogBaseVo;
+import uw.task.TaskData;
+import uw.task.util.JsonMapper;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -11,12 +13,12 @@ import java.util.Date;
  *
  * @author axeon
  */
-@JsonIgnoreProperties({ "refObject"})
+@JsonIgnoreProperties({"refObject"})
 public class TaskCronerLog extends LogBaseVo implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-	private long id;
+    private long id;
 
     /**
      * 关联ID
@@ -136,7 +138,16 @@ public class TaskCronerLog extends LogBaseVo implements Serializable {
     }
 
     public String getTaskParam() {
-        return taskParam;
+        if (taskParam != null) {
+            if (state != TaskData.STATE_SUCCESS || logLevel == TaskCronerConfig.TASK_LOG_TYPE_RECORD_ALL ||
+                    logLevel == TaskCronerConfig.TASK_LOG_TYPE_RECORD_RESULT_DATA) {
+                if (logLimitSize > 0 && taskParam.length() > logLimitSize) {
+                    taskParam = taskParam.substring(0, logLimitSize);
+                }
+                return taskParam;
+            }
+        }
+        return null;
     }
 
     public void setTaskParam(String taskParam) {
@@ -216,7 +227,16 @@ public class TaskCronerLog extends LogBaseVo implements Serializable {
     }
 
     public String getResultData() {
-        return resultData;
+        if (resultData != null) {
+            if (state != TaskData.STATE_SUCCESS || logLevel == TaskCronerConfig.TASK_LOG_TYPE_RECORD_ALL ||
+                    logLevel == TaskCronerConfig.TASK_LOG_TYPE_RECORD_RESULT_DATA) {
+                if (logLimitSize > 0 && resultData.length() > logLimitSize) {
+                    resultData = resultData.substring(0, logLimitSize);
+                }
+                return resultData;
+            }
+        }
+        return null;
     }
 
     public void setResultData(String resultData) {
