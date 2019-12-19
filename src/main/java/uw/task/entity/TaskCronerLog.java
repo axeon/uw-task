@@ -11,7 +11,7 @@ import java.util.Date;
  *
  * @author axeon
  */
-@JsonIgnoreProperties({ "refObject","logType","logLimitSize"})
+@JsonIgnoreProperties({ "refObject"})
 public class TaskCronerLog extends LogBaseVo implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -98,8 +98,8 @@ public class TaskCronerLog extends LogBaseVo implements Serializable {
      */
     private int logLimitSize;
 
-    public TaskCronerLog(int logType, int logLimitSize) {
-        this.logLevel = logType;
+    public TaskCronerLog(int logLevel, int logLimitSize) {
+        this.logLevel = logLevel;
         this.logLimitSize = logLimitSize;
     }
 

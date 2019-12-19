@@ -122,7 +122,7 @@ public class TaskCronerConfig implements Serializable {
     /**
      * 详见 TaskLogObjectAsStringSerializer 日志类型说明
      */
-    private int logType = TASK_LOG_TYPE_RECORD;
+    private int logLevel = TASK_LOG_TYPE_RECORD;
 
     /**
      * 日志字符串字段大小限制: 0 表示无限制
@@ -252,12 +252,12 @@ public class TaskCronerConfig implements Serializable {
         this.state = state;
     }
 
-    public int getLogType() {
-        return logType;
+    public int getLogLevel() {
+        return logLevel;
     }
 
-    public void setLogType(int logType) {
-        this.logType = logType;
+    public void setLogLevel(int logLevel) {
+        this.logLevel = logLevel;
     }
 
     public int getLogLimitSize() {
