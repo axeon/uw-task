@@ -91,6 +91,9 @@ public class TaskRunnerContainer {
      */
     @SuppressWarnings("unchecked")
     public TaskData process(TaskData taskData) {
+        if (taskData==null){
+            log.warn("正在处理的TaskData为NULL，请检查日志.");
+        }
         // 设置开始消费时间
         taskData.setConsumeDate(new Date());
         // 获得任务实例

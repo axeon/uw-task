@@ -80,7 +80,7 @@ public class TaskMessageConverter implements MessageConverter {
                 //重置output
                 output.reset();
             } catch (Exception e) {
-                throw new MessageConversionException("Failed to convert Message content.", e);
+                throw new MessageConversionException("Failed to convert Message content. " + e.getMessage(), e);
             }
         }
         messageProperties.setContentLength(bytes.length);
@@ -102,7 +102,7 @@ public class TaskMessageConverter implements MessageConverter {
                 content = kryo.readClassAndObject(input);
                 //此处反序列化
             } catch (Exception e) {
-                throw new MessageConversionException("Failed to convert Message content.", e);
+                throw new MessageConversionException("Failed to convert Message content. " + e.getMessage(), e);
             }
         } else {
             if (log.isWarnEnabled()) {
@@ -110,7 +110,7 @@ public class TaskMessageConverter implements MessageConverter {
                     log.warn("Could not convert incoming message with content-type [{}],message: {} ",
                             contentType, new String(message.getBody(), "UTF-8"));
                 } catch (Exception e) {
-                    log.warn("Could not convert incoming message with content-type [{}],message cannot be decode. ",
+                    log.warn("Could not convert incoming message with content-type [{}],message cannot be decode. " + e.getMessage(),
                             contentType);
                 }
             }
