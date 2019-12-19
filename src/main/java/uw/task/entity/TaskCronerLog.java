@@ -94,17 +94,12 @@ public class TaskCronerLog extends LogBaseVo implements Serializable {
     private int state;
 
     /**
-     * 详见日志类型配置说明
-     */
-    private int logType;
-
-    /**
      * 日志字符串字段大小限制: 0 表示无限制
      */
     private int logLimitSize;
 
     public TaskCronerLog(int logType, int logLimitSize) {
-        this.logType = logType;
+        this.logLevel = logType;
         this.logLimitSize = logLimitSize;
     }
 
@@ -234,14 +229,6 @@ public class TaskCronerLog extends LogBaseVo implements Serializable {
 
     public void setState(int state) {
         this.state = state;
-    }
-
-    public int getLogType() {
-        return logType;
-    }
-
-    public void setLogType(int logType) {
-        this.logType = logType;
     }
 
     public int getLogLimitSize() {

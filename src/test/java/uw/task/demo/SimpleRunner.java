@@ -5,7 +5,7 @@ import org.springframework.amqp.core.MessageProperties;
 import uw.task.TaskData;
 import uw.task.entity.TaskContact;
 import uw.task.entity.TaskRunnerConfig;
-import uw.task.util.TaskMessageConverter;
+import uw.task.converter.TaskMessageConverter;
 
 /**
  * @author liliang
@@ -36,7 +36,6 @@ public class SimpleRunner extends SimpleBaseRunner {
         taskData.setResultData("我是简单的Java String");
         taskData.setTaskClass("uw.task.demo.SimpleRunner");
 
-        TaskMessageConverter.constructTaskDataType("uw.task.demo.SimpleRunner",runner);
 
         MessageProperties properties = new MessageProperties();
         Message message = converter.toMessage(taskData,properties);

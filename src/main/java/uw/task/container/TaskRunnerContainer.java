@@ -14,6 +14,7 @@ import uw.task.api.TaskAPI;
 import uw.task.conf.TaskMetaInfoManager;
 import uw.task.conf.TaskProperties;
 import uw.task.entity.TaskRunnerConfig;
+import uw.task.entity.TaskRunnerLog;
 import uw.task.exception.TaskDataException;
 import uw.task.exception.TaskPartnerException;
 import uw.task.listener.RunnerTaskListener;
@@ -224,7 +225,13 @@ public class TaskRunnerContainer {
         // 不管如何，都给设定结束日期。
         taskData.setFinishDate(new Date());
         // 保存日志与统计信息
-        taskAPI.sendTaskRunnerLog(taskData);
+        int logLevel = taskConfig.getLogLevel();
+        if (logLevel > TaskRunnerConfig.TASK_LOG_TYPE_NONE) {
+            TaskRunnerLog log = new TaskRunnerLog(taskData);
+            log.setLogLevel(logLevel);
+            log.setLogLimitSize(taskConfig.getLogLimitSize());
+            taskAPI.sendTaskRunnerLog(log);
+        }
 
         if (taskData.getRunType() == TaskData.RUN_TYPE_GLOBAL_RPC || taskData.getRunType() == TaskData.RUN_TYPE_LOCAL) {
             // 如果异常，根据任务设置，重新跑

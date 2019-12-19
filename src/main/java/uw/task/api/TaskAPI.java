@@ -1,10 +1,10 @@
 package uw.task.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.client.RestTemplate;
-import uw.task.TaskData;
-import uw.task.service.TaskLogService;
+import uw.log.es.LogClient;
 import uw.task.conf.TaskProperties;
 import uw.task.entity.*;
 
@@ -32,9 +32,9 @@ public class TaskAPI {
     private RestTemplate restTemplate;
 
     /**
-     * 专门给日志发送使用的线程池。
+     * 日志客户端。
      */
-    private TaskLogService taskLogService = null;
+    private LogClient logClient = null;
 
     /**
      * 本机的外网IP
@@ -42,10 +42,10 @@ public class TaskAPI {
     private String hostIp = "";
 
     public TaskAPI(final TaskProperties taskProperties, final RestTemplate restTemplate,
-                   final TaskLogService taskLogService) {
+                   final LogClient logClient) {
         this.taskProperties = taskProperties;
         this.restTemplate = restTemplate;
-        this.taskLogService = taskLogService;
+        this.logClient = logClient;
     }
 
     /**
@@ -215,10 +215,10 @@ public class TaskAPI {
     /**
      * 发送Runner任务日志。
      *
-     * @param taskData
+     * @param log
      */
-    public void sendTaskRunnerLog(TaskData<?, ?> taskData) {
-        taskLogService.writeRunnerLog(taskData);
+    public void sendTaskRunnerLog(TaskRunnerLog log) {
+        logClient.log(log);
     }
 
     /**
@@ -227,7 +227,7 @@ public class TaskAPI {
      * @param configId      配置Id,方便更新下一次执行时间
      * @param taskCronerLog 日志对象
      */
-    public void sendTaskCronerLog(long configId,TaskCronerLog taskCronerLog) {
+    public void sendTaskCronerLog(long configId, TaskCronerLog taskCronerLog) {
         try {
             restTemplate.getForObject(
                     taskProperties.getTaskCenterHost()
@@ -236,6 +236,47 @@ public class TaskAPI {
         } catch (Exception e) {
             log.error("TaskAPI.cornerTick()服务端主机状态更新异常: " + e.getMessage(), e);
         }
-        taskLogService.writeCronerLog(taskCronerLog);
+
+        int logLevel = taskCronerLog.getLogLevel();
+        int logLimitSize = taskCronerLog.getLogLimitSize();
+        if (logLevel > TaskCronerConfig.TASK_LOG_TYPE_NONE) {
+            switch (logLevel) {
+                case TaskCronerConfig.TASK_LOG_TYPE_RECORD: {
+                    taskCronerLog.setTaskParam(null);
+                    taskCronerLog.setResultData(null);
+                }
+                break;
+                case TaskCronerConfig.TASK_LOG_TYPE_RECORD_TASK_PARAM: {
+                    String taskParam = taskCronerLog.getTaskParam();
+                    if (logLimitSize > 0 && StringUtils.isNotBlank(taskParam) && taskParam.length() > logLimitSize) {
+                        taskCronerLog.setTaskParam(taskParam.substring(0, logLimitSize));
+                    }
+                    taskCronerLog.setResultData(null);
+                }
+                break;
+                case TaskCronerConfig.TASK_LOG_TYPE_RECORD_RESULT_DATA: {
+                    String resultData = taskCronerLog.getResultData();
+                    if (logLimitSize > 0 && StringUtils.isNotBlank(resultData) && resultData.length() > logLimitSize) {
+                        taskCronerLog.setResultData(resultData.substring(0, logLimitSize));
+                    }
+                    taskCronerLog.setTaskParam(null);
+                }
+                break;
+                case TaskCronerConfig.TASK_LOG_TYPE_RECORD_ALL: {
+                    if (logLimitSize > 0) {
+                        String taskParam = taskCronerLog.getTaskParam();
+                        String resultData = taskCronerLog.getResultData();
+                        if (StringUtils.isNotBlank(taskParam) && taskParam.length() > logLimitSize) {
+                            taskCronerLog.setTaskParam(taskParam.substring(0, logLimitSize));
+                        }
+                        if (StringUtils.isNotBlank(resultData) && resultData.length() > logLimitSize) {
+                            taskCronerLog.setResultData(resultData.substring(0, logLimitSize));
+                        }
+                    }
+                }
+                break;
+            }
+            logClient.log(taskCronerLog);
+        }
     }
 }

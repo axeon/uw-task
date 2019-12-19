@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.log.es.vo.LogBaseVo;
 import uw.task.TaskData;
-import uw.task.util.TaskMessageConverter;
+import uw.task.util.JsonMapper;
 
 import java.util.Date;
 
@@ -15,17 +15,12 @@ import java.util.Date;
  *
  * @author axeon
  */
-@JsonIgnoreProperties({"logType","logLimitSize","taskData"})
+@JsonIgnoreProperties({"taskData"})
 public class TaskRunnerLog extends LogBaseVo {
 
     private static final Logger logger = LoggerFactory.getLogger(TaskRunnerLog.class);
 
     private TaskData taskData;
-
-    /**
-     * log类型。
-     */
-    private int logType;
 
     /**
      * logLimitSize。
@@ -102,15 +97,15 @@ public class TaskRunnerLog extends LogBaseVo {
             // 报错了
             if (taskData.getErrorInfo() != null) {
                 try {
-                    return TaskMessageConverter.getTaskObjectMapper().writeValueAsString(value);
+                    return JsonMapper.MAPPER.writeValueAsString(value);
                 } catch (Exception e) {
                     logger.error(e.getMessage(), e);
                 }
-            } else if (logType == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_ALL ||
-                    logType == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_TASK_PARAM) {
+            } else if (logLevel == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_ALL ||
+                    logLevel == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_TASK_PARAM) {
                 String taskParam = null;
                 try {
-                    taskParam = TaskMessageConverter.getTaskObjectMapper().writeValueAsString(value);
+                    taskParam = JsonMapper.MAPPER.writeValueAsString(value);
                 } catch (Exception e) {
                     logger.error(e.getMessage(), e);
                 }
@@ -198,15 +193,15 @@ public class TaskRunnerLog extends LogBaseVo {
             // 报错了
             if (taskData.getErrorInfo() != null) {
                 try {
-                    return TaskMessageConverter.getTaskObjectMapper().writeValueAsString(value);
+                    return JsonMapper.MAPPER.writeValueAsString(value);
                 } catch (Exception e) {
                     logger.error(e.getMessage(), e);
                 }
-            } else if (logType == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_ALL ||
-                    logType == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_RESULT_DATA) {
+            } else if (logLevel == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_ALL ||
+                    logLevel == TaskRunnerConfig.TASK_LOG_TYPE_RECORD_RESULT_DATA) {
                 String resultData = null;
                 try {
-                    resultData = TaskMessageConverter.getTaskObjectMapper().writeValueAsString(value);
+                    resultData = JsonMapper.MAPPER.writeValueAsString(value);
                 } catch (Exception e) {
                     logger.error(e.getMessage(), e);
                 }
@@ -241,14 +236,6 @@ public class TaskRunnerLog extends LogBaseVo {
      */
     public int getState() {
         return taskData.getState();
-    }
-
-    public int getLogType() {
-        return logType;
-    }
-
-    public void setLogType(int logType) {
-        this.logType = logType;
     }
 
     public int getLogLimitSize() {

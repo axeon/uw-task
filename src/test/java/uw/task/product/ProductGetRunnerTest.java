@@ -4,7 +4,7 @@ import com.google.common.collect.Lists;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 import uw.task.TaskData;
-import uw.task.util.TaskMessageConverter;
+import uw.task.converter.TaskMessageConverter;
 
 import java.util.List;
 
@@ -34,7 +34,7 @@ public class ProductGetRunnerTest {
         responseData.setData(hotelProductAndRoomList);
         taskData.setResultData(responseData);
 
-        TaskMessageConverter.constructTaskDataType("zwy.saas.hotel.task.supplier.meituan.runner.ProductGetRunner",runner);
+//        TaskMessageConverter.constructTaskDataType("zwy.saas.hotel.task.supplier.meituan.runner.ProductGetRunner",runner);
 
         MessageProperties properties = new MessageProperties();
         Message message = converter.toMessage(taskData,properties);

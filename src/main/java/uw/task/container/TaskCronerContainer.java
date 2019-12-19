@@ -46,7 +46,7 @@ public class TaskCronerContainer {
     /**
      * cronerTask任务索引。
      */
-    private final Map<Long, ScheduledFuture<?>> cronerTasks = new HashMap<Long, ScheduledFuture<?>>(16);
+    private final Map<Long, ScheduledFuture<?>> cronerTasks = new HashMap<Long, ScheduledFuture<?>>(32);
 
     /**
      * 选举

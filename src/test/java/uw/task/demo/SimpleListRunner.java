@@ -4,7 +4,7 @@ import org.assertj.core.util.Lists;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 import uw.task.TaskData;
-import uw.task.util.TaskMessageConverter;
+import uw.task.converter.TaskMessageConverter;
 
 import java.util.List;
 
@@ -22,8 +22,6 @@ public class SimpleListRunner extends SimpleBaseListRunner {
         taskData.setTaskParam(Lists.newArrayList());
         taskData.setResultData(Lists.newArrayList());
         taskData.setTaskClass("uw.task.demo.SimpleListRunner");
-
-        TaskMessageConverter.constructTaskDataType("uw.task.demo.SimpleListRunner",runner);
 
         MessageProperties properties = new MessageProperties();
         Message message = converter.toMessage(taskData,properties);

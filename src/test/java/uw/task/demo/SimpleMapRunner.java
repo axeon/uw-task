@@ -4,7 +4,7 @@ import com.google.common.collect.Maps;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 import uw.task.TaskData;
-import uw.task.util.TaskMessageConverter;
+import uw.task.converter.TaskMessageConverter;
 
 import java.util.Map;
 
@@ -22,7 +22,6 @@ public class SimpleMapRunner extends SimpleBaseMapRunner {
         taskData.setResultData(Maps.newHashMap());
         taskData.setTaskClass("uw.task.demo.SimpleMapRunner");
 
-        TaskMessageConverter.constructTaskDataType("uw.task.demo.SimpleMapRunner",runner);
 
         MessageProperties properties = new MessageProperties();
         Message message = converter.toMessage(taskData,properties);

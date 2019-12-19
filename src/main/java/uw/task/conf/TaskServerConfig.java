@@ -21,7 +21,7 @@ import uw.task.container.TaskRunnerContainer;
 import uw.task.entity.TaskContact;
 import uw.task.entity.TaskCronerConfig;
 import uw.task.entity.TaskRunnerConfig;
-import uw.task.util.TaskMessageConverter;
+import uw.task.converter.TaskMessageConverter;
 
 import java.util.List;
 import java.util.Map;
@@ -122,18 +122,6 @@ public class TaskServerConfig {
     }
 
     /**
-     * 更新主机状态。10秒更新一次。
-     */
-    public void updateStatus() {
-        if (taskProperties.isEnableTaskRegistry()) {
-            if (log.isDebugEnabled()) {
-                log.debug("正在提交主机状态报告...");
-            }
-            taskAPI.updateHostStatus();
-        }
-    }
-
-    /**
      * 5分钟加载一次。 用于同步当前系统内的队列资源。
      */
     public void loadSysQueue() {
@@ -154,7 +142,13 @@ public class TaskServerConfig {
         if (!taskProperties.isEnableTaskRegistry()) {
             return;
         }
+
         long startUpdateTimeMills = System.currentTimeMillis();
+
+        if (log.isDebugEnabled()) {
+            log.debug("正在提交主机状态报告...");
+        }
+        taskAPI.updateHostStatus();
 
         // 先拉主机配置，因为taskScheduler调用需要
         if (log.isDebugEnabled()) {
@@ -281,8 +275,6 @@ public class TaskServerConfig {
                         }
                         serverConfig = uploadRunnerInfo(localConfig, contact);
                     }
-                    // 构建类型，放在最后，防止出幺蛾子
-                    TaskMessageConverter.constructTaskDataType(taskClass, kv.getValue());
                 } catch (Exception e) {
                     log.error(e.getMessage(), e);
                 }

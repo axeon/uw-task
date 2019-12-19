@@ -3,7 +3,7 @@ package uw.task.demo;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 import uw.task.TaskData;
-import uw.task.util.TaskMessageConverter;
+import uw.task.converter.TaskMessageConverter;
 
 /**
  * @author liliang
@@ -19,7 +19,6 @@ public class SingleParamTResultRunner extends SingleParamTResultBaseRunner {
         taskData.setResultData(new MyReturnData());
         taskData.setTaskClass("uw.task.demo.SingleParamTResultRunner");
 
-        TaskMessageConverter.constructTaskDataType("uw.task.demo.SingleParamTResultRunner",runner);
 
         MessageProperties properties = new MessageProperties();
         Message message = converter.toMessage(taskData,properties);

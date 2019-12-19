@@ -1,6 +1,5 @@
 package uw.task;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
@@ -16,7 +15,6 @@ import uw.task.conf.TaskProperties;
 import uw.task.container.TaskRunnerContainer;
 import uw.task.exception.TaskRuntimeException;
 import uw.task.util.GlobalSequenceManager;
-import uw.task.util.TaskMessageConverter;
 
 import java.util.Date;
 import java.util.concurrent.*;
@@ -95,20 +93,8 @@ public class TaskFactory {
      * @param taskData 任务数据
      * @return
      */
-    public <TP, RD> TaskData<TP, RD> runTask(final TaskData<TP, RD> taskData) {
-        return runTask(taskData, null);
-    }
-
-    /**
-     * 同步执行任务，可能会导致阻塞。
-     * 在调用的时候，尤其要注意，taskData对象不可改变！
-     *
-     * @param taskData 任务数据
-     * @return
-     */
     @SuppressWarnings("unchecked")
-    public <TP, RD> TaskData<TP, RD> runTask(final TaskData<TP, RD> taskData,
-                                             final TypeReference<TaskData<TP, RD>> typeRef) {
+    public <TP, RD> TaskData<TP, RD> runTask(final TaskData<TP, RD> taskData) {
         taskData.setId(globalSequenceManager.nextId("task_runner_log"));
         taskData.setQueueDate(new Date());
         // 当自动RPC，并且本地有runner，而且target匹配的时候，运行在本地模式下。
@@ -130,11 +116,7 @@ public class TaskFactory {
             // 全局运行模式
             String queue = TaskMetaInfoManager.getFitQueue(taskData);
             Message retMessage = rabbitTemplate.sendAndReceive(queue, queue, message);
-            if (typeRef == null) {
-                return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage(retMessage);
-            } else {
-                return TaskMessageConverter.constructTaskData(retMessage, typeRef);
-            }
+            return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage(retMessage);
         }
     }
 
@@ -162,19 +144,6 @@ public class TaskFactory {
         }
     }
 
-
-    /**
-     * 远程运行任务，并返回future<TaskData<?,?>>。 如果需要获得数据，可以使用futrue.get()来获得。
-     * 此方法要谨慎使用，因为task存在限速，大并发下可能会导致线程数超。
-     * 在调用的时候，尤其要注意，taskData对象不可改变！
-     *
-     * @param taskData 任务数据
-     * @return
-     */
-    public <TP, RD> Future<TaskData<TP, RD>> runTaskAsync(final TaskData<TP, RD> taskData) {
-        return runTaskAsync(taskData, null);
-    }
-
     /**
      * 远程运行任务，并返回future<TaskData<?,?>>。 如果需要获得数据，可以使用futrue.get()来获得。
      * 此方法要谨慎使用，因为task存在限速，大并发下可能会导致线程数超。
@@ -184,8 +153,7 @@ public class TaskFactory {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public <TP, RD> Future<TaskData<TP, RD>> runTaskAsync(final TaskData<TP, RD> taskData,
-                                                          final TypeReference<TaskData<TP, RD>> typeRef) {
+    public <TP, RD> Future<TaskData<TP, RD>> runTaskAsync(final TaskData<TP, RD> taskData) {
         taskData.setId(globalSequenceManager.nextId("task_runner_log"));
         taskData.setQueueDate(new Date());
 
@@ -212,11 +180,7 @@ public class TaskFactory {
             String queue = TaskMetaInfoManager.getFitQueue(taskData);
             return taskRpcService.submit(() -> {
                 Message retMessage = rabbitTemplate.sendAndReceive(queue, queue, message);
-                if (typeRef == null) {
-                    return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage(retMessage);
-                } else {
-                    return TaskMessageConverter.constructTaskData(retMessage, typeRef);
-                }
+                return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage(retMessage);
             });
         }
     }

@@ -11,6 +11,7 @@ import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
@@ -38,21 +39,20 @@ import uw.task.TaskListenerManager;
 import uw.task.api.TaskAPI;
 import uw.task.container.TaskCronerContainer;
 import uw.task.container.TaskRunnerContainer;
-
-import javax.annotation.PreDestroy;
-import java.time.Duration;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-
+import uw.task.converter.TaskMessageConverter;
 import uw.task.entity.TaskCronerLog;
 import uw.task.entity.TaskRunnerLog;
-import uw.task.service.TaskLogService;
-import uw.task.service.TaskMetricsService;
 import uw.task.util.GlobalRateLimiter;
 import uw.task.util.GlobalSequenceManager;
 import uw.task.util.LeaderVote;
 import uw.task.util.LocalRateLimiter;
-import uw.task.util.TaskMessageConverter;
+
+import javax.annotation.PreDestroy;
+import java.time.Duration;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 自动装配类 Created by Acris on 2017/5/23.
@@ -65,6 +65,11 @@ import uw.task.util.TaskMessageConverter;
 @AutoConfigureAfter({RedisAutoConfiguration.class, RabbitAutoConfiguration.class})
 public class TaskAutoConfiguration {
     private static final Logger log = LoggerFactory.getLogger(TaskAutoConfiguration.class);
+
+    /**
+     * 是否已初始化配置，保证只初始化一次；
+     */
+    private AtomicBoolean initFlag = new AtomicBoolean(false);
 
     /**
      * 服务端任务配置。
@@ -80,16 +85,6 @@ public class TaskAutoConfiguration {
      * Leader选举器
      */
     private LeaderVote leaderVote;
-
-    /**
-     * 日志服务
-     */
-    private TaskLogService taskLogService;
-
-    /**
-     * 是否已初始化配置，保证只初始化一次；
-     */
-    private AtomicBoolean initFlag = new AtomicBoolean(false);
 
     /**
      * 内部自持任务。
@@ -110,11 +105,11 @@ public class TaskAutoConfiguration {
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Bean
     public TaskFactory taskFactory(final ApplicationContext context,
-                                     final TaskProperties taskProperties,
-                                     @Qualifier("tokenRestTemplate") final RestTemplate restTemplate,
-                                     final TaskListenerManager taskListenerManager,
-                                     final ClientResources clientResources,
-                                     final LogClient logClient) {
+                                   final TaskProperties taskProperties,
+                                   @Qualifier("tokenRestTemplate") final RestTemplate restTemplate,
+                                   final TaskListenerManager taskListenerManager,
+                                   final ClientResources clientResources,
+                                   final LogClient logClient) {
         // task自定义的rabbit连接工厂
         ConnectionFactory taskRabbitConnectionFactory = getTaskRabbitConnectionFactory(taskProperties.getRabbitmq());
         // task自定义的redis连接工厂
@@ -131,10 +126,8 @@ public class TaskAutoConfiguration {
         logClient.regLogObject(TaskCronerLog.class);
         logClient.regLogObject(TaskRunnerLog.class);
         StringRedisTemplate redisTemplate = new StringRedisTemplate(taskRedisConnectionFactory);
-        TaskMetricsService taskMetricsService = new TaskMetricsService(redisTemplate);
-        taskLogService = new TaskLogService(logClient, taskMetricsService);
         // taskAPI
-        TaskAPI taskAPI = new TaskAPI(taskProperties, restTemplate, taskLogService);
+        TaskAPI taskAPI = new TaskAPI(taskProperties, restTemplate, logClient);
         // rabbit模板
         RabbitTemplate rabbitTemplate = getTaskRabbitTemplate(taskRabbitConnectionFactory);
         // rabiit管理器
@@ -153,6 +146,24 @@ public class TaskAutoConfiguration {
         // taskRunnerContainer错误重试需要TaskScheduler
         taskRunnerContainer.setTaskFactory(taskFactory);
         return taskFactory;
+    }
+
+
+    /**
+     * 注册日志对象
+     *
+     * @param logClient
+     * @return
+     */
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
+    @Bean
+    public CommandLineRunner configLogClient(final LogClient logClient) {
+        return args -> {
+            // 登录日志查询
+            logClient.regLogObjectWithIndexPattern(TaskRunnerLog.class, "yyyyMMdd");
+            // 操作日志
+            logClient.regLogObjectWithIndexPattern(TaskCronerLog.class, "yyyyMMdd");
+        };
     }
 
     /**
@@ -174,17 +185,14 @@ public class TaskAutoConfiguration {
             serverConfig.init();
             //task自持任务
             if (serverConfig.isEnableTaskRegistry()) {
-                scheduledExecutorService = Executors.newScheduledThreadPool(6,
+                scheduledExecutorService = Executors.newScheduledThreadPool(3,
                         new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskSelf-%d").build());
-                scheduledExecutorService.scheduleAtFixedRate(() -> serverConfig.updateStatus(), 0, 30, TimeUnit.SECONDS);
                 scheduledExecutorService.scheduleAtFixedRate(() -> serverConfig.updateConfig(), 0, 30, TimeUnit.SECONDS);
                 scheduledExecutorService.scheduleAtFixedRate(() -> leaderVote.batchCheckLeaderStatus(), 0, 60, TimeUnit.SECONDS);
             } else {
-                scheduledExecutorService = Executors.newScheduledThreadPool(3,
+                scheduledExecutorService = Executors.newScheduledThreadPool(1,
                         new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TaskSelf-%d").build());
             }
-            scheduledExecutorService.scheduleAtFixedRate(() -> taskLogService.sendRunnerLogToServer(), 1, 1, TimeUnit.SECONDS);
-            scheduledExecutorService.scheduleAtFixedRate(() -> taskLogService.sendCronerLogToServer(), 2, 1, TimeUnit.SECONDS);
             scheduledExecutorService.scheduleAtFixedRate(() -> serverConfig.loadSysQueue(), 0, 60, TimeUnit.SECONDS);
         }
     }
