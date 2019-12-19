@@ -48,6 +48,11 @@ public class TaskFactory {
      */
     private ExecutorService taskRpcService = null;
 
+    /**
+     * 最大重试次数。
+     */
+    private static final int MAX_RETRY_TIMES = 10;
+
 
     public TaskFactory(TaskProperties taskProperties, RabbitTemplate rabbitTemplate,
                        TaskRunnerContainer taskRunnerContainer, GlobalSequenceManager globalSequenceManager) {
@@ -68,7 +73,18 @@ public class TaskFactory {
     public void sendToQueue(final TaskData<?, ?> taskData) {
         Message message = buildTaskQueueMessage(taskData);
         String queue = message.getMessageProperties().getConsumerQueue();
-        rabbitTemplate.send(queue, queue, message);
+        //此处可能出现The channelMax limit is reached.报错，所以进行重试。
+        for (int i = 0; i < MAX_RETRY_TIMES; i++) {
+            try {
+                if (i > 0) {
+                    Thread.sleep(i * 500);
+                }
+                rabbitTemplate.send(queue, queue, message);
+                break;
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+            }
+        }
     }
 
     /**
@@ -81,7 +97,7 @@ public class TaskFactory {
         taskData.setId(globalSequenceManager.nextId("task_runner_log"));
         taskData.setQueueDate(new Date());
         taskData.setRunType(TaskData.RUN_TYPE_GLOBAL);
-        MessageProperties messageProperties= new MessageProperties();
+        MessageProperties messageProperties = new MessageProperties();
         messageProperties.setConsumerQueue(TaskMetaInfoManager.getFitQueue(taskData));
         Message msg = rabbitTemplate.getMessageConverter().toMessage(taskData, messageProperties);
         return msg;
@@ -109,15 +125,26 @@ public class TaskFactory {
         } else {
             taskData.setRunType(TaskData.RUN_TYPE_GLOBAL_RPC);
             //加入优先级信息。
-            MessageProperties messageProperties= new MessageProperties();
+            MessageProperties messageProperties = new MessageProperties();
             messageProperties.setPriority(10);
             messageProperties.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
             messageProperties.setExpiration("180000");
             Message message = rabbitTemplate.getMessageConverter().toMessage(taskData, messageProperties);
             // 全局运行模式
             String queue = TaskMetaInfoManager.getFitQueue(taskData);
-            Message retMessage = rabbitTemplate.sendAndReceive(queue, queue, message);
-            return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage(retMessage);
+            //此处可能出现The channelMax limit is reached.报错，所以进行重试。
+            for (int i = 0; i < MAX_RETRY_TIMES; i++) {
+                try {
+                    if (i > 0) {
+                        Thread.sleep(i * 500);
+                    }
+                    Message retMessage = rabbitTemplate.sendAndReceive(queue, queue, message);
+                    return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage(retMessage);
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
+            }
+            return null;
         }
     }
 
@@ -173,15 +200,26 @@ public class TaskFactory {
             // 全局运行模式
             taskData.setRunType(TaskData.RUN_TYPE_GLOBAL_RPC);
             //加入优先级信息。
-            MessageProperties messageProperties= new MessageProperties();
+            MessageProperties messageProperties = new MessageProperties();
             messageProperties.setPriority(10);
             messageProperties.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
             messageProperties.setExpiration("180000");
             Message message = rabbitTemplate.getMessageConverter().toMessage(taskData, messageProperties);
             String queue = TaskMetaInfoManager.getFitQueue(taskData);
             return taskRpcService.submit(() -> {
-                Message retMessage = rabbitTemplate.sendAndReceive(queue, queue, message);
-                return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage(retMessage);
+                //此处可能出现The channelMax limit is reached.报错，所以进行重试。
+                for (int i = 0; i < MAX_RETRY_TIMES; i++) {
+                    try {
+                        if (i > 0) {
+                            Thread.sleep(i * 500);
+                        }
+                        Message retMessage = rabbitTemplate.sendAndReceive(queue, queue, message);
+                        return (TaskData<TP, RD>) rabbitTemplate.getMessageConverter().fromMessage(retMessage);
+                    } catch (Exception e) {
+                        log.error(e.getMessage(), e);
+                    }
+                }
+                return null;
             });
         }
     }
