@@ -157,7 +157,7 @@ public class TaskAutoConfiguration {
      */
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Bean
-    public CommandLineRunner configLogClient(final LogClient logClient) {
+    public CommandLineRunner configUwTaskLogClient(final LogClient logClient) {
         return args -> {
             // 登录日志查询
             logClient.regLogObjectWithIndexPattern(TaskRunnerLog.class, "yyyyMMdd");
